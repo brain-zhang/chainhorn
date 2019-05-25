@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import settings
-import sys
 import threading
 
 from contrib.pyspv import pyspv
@@ -29,7 +28,11 @@ class PyspvSingleton(pyspv):
         return PyspvSingleton._instance
 
 
-spv = PyspvSingleton(app_name='pytxhorn', peer_goal=100, listen=('0.0.0.0', 8334), logging_level=WARNING)
+spv = PyspvSingleton(app_name='pytxhorn',
+                     peer_goal=100,
+                     max_broadcast_peer=100,
+                     listen=('0.0.0.0', 8334),
+                     logging_level=WARNING)
 
 
 class GetAllPeers(Resource):

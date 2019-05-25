@@ -51,7 +51,7 @@ class pyspv:
     :type sync_block_start: integer or None
     '''
 
-    def __init__(self, app_name, testnet=False, peer_goal=8, logging_level=WARNING, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None):
+    def __init__(self, app_name, testnet=False, peer_goal=8, max_broadcast_peer=8, logging_level=WARNING, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None):
         self.app_name = app_name
         self.time_offset = 0
         self.logging_level = logging_level
@@ -86,7 +86,7 @@ class pyspv:
         self.wallet = wallet.Wallet(spv=self, monitors=[PubKeyPaymentMonitor, MultisigScriptHashPaymentMonitor, StealthAddressPaymentMonitor])
         self.wallet.load()
 
-        self.network_manager = network.Manager(spv=self, peer_goal=peer_goal, listen=listen, tor=tor, user_agent=VERSION)
+        self.network_manager = network.Manager(spv=self, peer_goal=peer_goal, max_broadcast_peer=max_broadcast_peer, listen=listen, tor=tor, user_agent=VERSION)
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser()
