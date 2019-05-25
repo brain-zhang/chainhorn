@@ -1,18 +1,70 @@
 # -*- coding: utf-8 -*-
 
 import settings
-import time
-from contrib import pyspv
+import sys
+import threading
 
-if __name__ == '__main__':
-    spv = pyspv.pyspv("pytxhorn", peer_goal=100)
-    print("pytxhorn start ~~")
+from contrib.pyspv import pyspv
+from contrib.pyspv.util import DEBUG, INFO, WARNING, hexstring_to_bytes
+from contrib.pyspv.bitcoin import Bitcoin
+from contrib.pyspv.transaction import Transaction
+from flask import Flask
+from flask_restful import Resource, Api
 
-    while True:
+app = Flask(__name__)
+api = Api(app)
+
+
+class PyspvSingleton(pyspv):
+    _instance_lock = threading.Lock()
+
+    def __init__(self, **kwargs):
+        super(PyspvSingleton, self).__init__(**kwargs)
+
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(PyspvSingleton, "_instance"):
+            with PyspvSingleton._instance_lock:
+                if not hasattr(PyspvSingleton, "_instance"):
+                    PyspvSingleton._instance = object.__new__(cls)
+        return PyspvSingleton._instance
+
+
+spv = PyspvSingleton(app_name='pytxhorn', peer_goal=100, listen=('0.0.0.0', 8334), logging_level=WARNING)
+
+
+class GetAllPeers(Resource):
+    def get(self):
         network_manager = spv.get_network_manager()
         peers = network_manager.get_peers()
-        print('=======================')
-        for peer_address in list(peers.keys()):
-            print(peer_address)
+        return {'peers': list(peers.keys())}
 
-        time.sleep(30)
+
+class ShutDown(Resource):
+    def get(self):
+        spv.shutdown()
+        return {'shutdown': 'ok'}
+
+
+class Start(Resource):
+    def get(self):
+        spv.start()
+        return {'start': 'ok'}
+
+
+class Broadcast(Resource):
+    def get(self, tx):
+        data = hexstring_to_bytes(tx, reverse=False)
+        txobj, _ = Transaction.unserialize(data, Bitcoin)
+        spv.broadcast_transaction(txobj)
+        return {'broadcast': 'ok'}
+
+
+api.add_resource(GetAllPeers, '/peers')
+api.add_resource(ShutDown, '/shutdown')
+api.add_resource(Start, '/start')
+api.add_resource(Broadcast, '/broadcast/<string:tx>')
+
+
+if __name__ == '__main__':
+    spv.start()
+    app.run(debug=True)

@@ -31,12 +31,8 @@ class Bitcoin:
         'dnsseed.bluematt.me',
         'dnsseed.bitcoin.dashjr.org',
         'bitseed.xf2.org',
-        'seed.bitcoin.sipa.be',
-        'dnsseed.bluematt.me',
-        'dnsseed.bitcoin.dashjr.org',
         'seed.bitcoinstats.com',
         'seed.bitnodes.io',
-        'bitseed.xf2.org',
     ]
 
     TARGET_BLOCK_TIMESPAN = 14 * 24 * 60 * 60 # Try to adjust POW every two weeks

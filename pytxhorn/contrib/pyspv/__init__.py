@@ -87,7 +87,6 @@ class pyspv:
         self.wallet.load()
 
         self.network_manager = network.Manager(spv=self, peer_goal=peer_goal, listen=listen, tor=tor, user_agent=VERSION)
-        self.network_manager.start()
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser()
@@ -116,6 +115,9 @@ class pyspv:
             args.torproxy = ('127.0.0.1', 9050)
 
         return args
+
+    def start(self):
+        self.network_manager.start()
 
     def get_network_manager(self):
         return self.network_manager

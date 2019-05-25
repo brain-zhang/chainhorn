@@ -143,7 +143,7 @@ class Manager(threading.Thread):
         while self.running:
             now = time.time()
 
-            if len(self.peer_addresses) < 5:
+            if len(self.peer_addresses) < self.peer_goal:
                 self.get_new_addresses_from_peer_sources()
 
             self.check_for_incoming_connections()
