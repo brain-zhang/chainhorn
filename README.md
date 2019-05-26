@@ -16,6 +16,12 @@ Pytxhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bit
 pip install -r requirements.txt
 ```
 
+## Run
+
+``
+python3 pytxhorn.py
+```
+
 
 ## Roadmap to v1 && Features
 
@@ -24,6 +30,7 @@ pip install -r requirements.txt
 * [TODO] Testnet support
 * [TODO] Extensible payment monitor and transaction building system
 * [TODO] simple mini api set compatible with [bitcore core rpc](https://bitcoincore.org/en/doc/0.18.0/)
+
 
 ## Commands
 
