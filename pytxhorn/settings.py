@@ -22,6 +22,9 @@ BITCOIN_NETWORK_PEER_GOAL = 100
 # BITCOIN_NETWORK_BROADCAST_PEER_GOAL must <= BITCOIN_NETWORK_PEER_GOAL
 BITCOIN_NETWORK_BROADCAST_PEER_GOAL = 100
 
+HOST_IP = '0.0.0.0'
+HOST_PORT = 8033
+
 
 # add your settings before these code if you want to make it in local_settings.py
 try:
