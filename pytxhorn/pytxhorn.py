@@ -29,8 +29,8 @@ class PyspvSingleton(pyspv):
 
 
 spv = PyspvSingleton(app_name='pytxhorn',
-                     peer_goal=100,
-                     max_broadcast_peer=100,
+                     peer_goal=settings.BITCOIN_NETWORK_PEER_GOAL,
+                     broadcast_peer_goal=settings.BITCOIN_NETWORK_BROADCAST_PEER_GOAL,
                      listen=('0.0.0.0', 8334),
                      logging_level=WARNING)
 

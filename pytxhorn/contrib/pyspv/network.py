@@ -51,11 +51,11 @@ class Manager(threading.Thread):
     INVENTORY_FLAG_HOLD_FOREVER = 0x01
     INVENTORY_FLAG_MUST_CONFIRM = 0x02
 
-    def __init__(self, spv=None, peer_goal=1, max_broadcast_peer=10, listen=('', 0), tor=False, user_agent='pyspv'):
+    def __init__(self, spv=None, peer_goal=1, broadcast_peer_goal=10, listen=('', 0), tor=False, user_agent='pyspv'):
         threading.Thread.__init__(self)
         self.spv = spv
         self.peer_goal = peer_goal
-        self.max_broadcast_peer = min(max_broadcast_peer, peer_goal)
+        self.broadcast_peer_goal = min(broadcast_peer_goal, peer_goal)
         self.user_agent = '/{}/'.format(user_agent).replace(' ', ':')
 
         self.peers = {}
@@ -511,7 +511,7 @@ class Manager(threading.Thread):
                                 item['inv_to'] = set()
                         else:
                             if (now - item['time_added']) >= Manager.KEEP_TRANSACTION_IN_INVENTORY_TIME:
-                                if len(item['sent_to']) >= self.max_broadcast_peer:
+                                if len(item['sent_to']) >= self.broadcast_peer_goal:
                                     continue
 
                 item['time_check'] = now
