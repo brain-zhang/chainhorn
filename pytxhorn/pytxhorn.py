@@ -28,7 +28,8 @@ class PyspvSingleton(pyspv):
         return PyspvSingleton._instance
 
 
-spv = PyspvSingleton(app_name='pytxhorn',
+spv = PyspvSingleton(app_name=settings.APPNAME,
+                     testnet=settings.TESTNET,
                      peer_goal=settings.BITCOIN_NETWORK_PEER_GOAL,
                      broadcast_peer_goal=settings.BITCOIN_NETWORK_BROADCAST_PEER_GOAL,
                      listen=(settings.HOST_IP, settings.HOST_PORT),

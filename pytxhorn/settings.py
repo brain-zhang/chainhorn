@@ -17,10 +17,12 @@ IPC_ENDPOINT_ROOT = os.path.join(RUN_ROOT, 'ipc')
 
 sys.path.append(PROJECT_ROOT)
 
-BITCOIN_NETWORK_PEER_GOAL = 100
+APPNAME = 'pytxhorn'
 
+BITCOIN_NETWORK_PEER_GOAL = 100
 # BITCOIN_NETWORK_BROADCAST_PEER_GOAL must <= BITCOIN_NETWORK_PEER_GOAL
 BITCOIN_NETWORK_BROADCAST_PEER_GOAL = 100
+TESTNET = False
 
 HOST_IP = '0.0.0.0'
 HOST_PORT = 8033
@@ -31,3 +33,6 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+if TESTNET:
+    APPNAME = APPNAME + '_test'
