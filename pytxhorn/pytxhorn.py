@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import settings
+import signal
+import sys
 import threading
 
 from contrib.pyspv import pyspv
@@ -8,10 +10,23 @@ from contrib.pyspv.util import DEBUG, INFO, WARNING, hexstring_to_bytes
 from contrib.pyspv.bitcoin import Bitcoin
 from contrib.pyspv.transaction import Transaction
 from flask import Flask
+from flask import request
 from flask_restful import Resource, Api
 
 app = Flask(__name__)
 api = Api(app)
+
+
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
+
+
+def shutdown_handler(signal, frame):
+    print('CTRL-C pressed!')
+    spv.shutdown()
+    sys.exit(0)
 
 
 class PyspvSingleton(pyspv):
@@ -72,3 +87,5 @@ api.add_resource(Broadcast, '/broadcast/<string:tx>')
 if __name__ == '__main__':
     spv.start()
     app.run(debug=True)
+    signal.signal(signal.SIGINT, shutdown_handler)
+    signal.pause()
