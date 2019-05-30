@@ -11,8 +11,8 @@ START_UP_LOG=${SCRIPT_LOG_LOCATION}/startup
 SHUT_DOWN_LOG=${SCRIPT_LOG_LOCATION}/shutdown
 
 prog="supervisord"
-pidfile=${PIDFILE-/opt/pytxhorn/var/pytxhorn.pid}
-lockfile=${LOCKFILE-/opt/pytxhorn/var/pytxhorn.lock}
+pidfile=${PIDFILE-/opt/pytxhorn/var/run/pytxhorn.pid}
+lockfile=${LOCKFILE-/opt/pytxhorn/var/run/pytxhorn.lock}
 supervisord="/usr/local/bin/supervisord"
 RETVAL=0
 CONF_PATH="/opt/pytxhorn/etc/runtime/supervisor/supervisord.conf"
