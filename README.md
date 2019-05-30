@@ -14,12 +14,13 @@ Pytxhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bit
 
 ```
 pip install -r requirements.txt
+apt install supervisor
 ```
 
 ## Run
 
 ```
-python3 pytxhorn.py
+bin/pytxhorn start
 ```
 
 
