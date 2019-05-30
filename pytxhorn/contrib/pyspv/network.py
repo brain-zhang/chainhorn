@@ -584,6 +584,8 @@ class Peer(threading.Thread):
                 traceback.print_exc()
                 break
             time.sleep(0.1)
+
+        self.step()
         if self.manager.spv.logging_level <= DEBUG:
             print("[PEER] {} Peer exiting ({} bytes recv/{} bytes sent)...".format(self.peer_address, self.bytes_received, self.bytes_sent))
 
