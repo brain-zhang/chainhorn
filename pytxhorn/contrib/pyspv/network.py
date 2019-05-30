@@ -927,6 +927,8 @@ class Peer(threading.Thread):
         data.append(Serialize.serialize_variable_int(len(invs)))
         for inv in invs:
             data.append(inv.serialize())
+            if self.manager.spv.logging_level <= INFO:
+                print("send inventory:{}, peer:{}".format(str(inv), self.peer_address))
 
         payload = b''.join(data)
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "inv", payload))
