@@ -86,6 +86,6 @@ api.add_resource(Broadcast, '/broadcast/<string:tx>')
 
 if __name__ == '__main__':
     spv.start()
-    app.run(debug=True)
+    app.run(debug=True, host=settings.WEB_HOST_IP, port=settings.WEB_HOST_PORT)
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.pause()
