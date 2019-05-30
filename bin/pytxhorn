@@ -1,0 +1,81 @@
+#!/bin/sh
+
+. /lib/lsb/init-functions
+
+prefix=/usr
+exec_prefix=/usr
+sbindir=/usr/sbin
+SCRIPT_BASE=/root/scripts
+SCRIPT_LOG_LOCATION=/opt/pytxhorn/var/log/pytxhorn
+START_UP_LOG=${SCRIPT_LOG_LOCATION}/startup
+SHUT_DOWN_LOG=${SCRIPT_LOG_LOCATION}/shutdown
+
+prog="supervisord"
+pidfile=${PIDFILE-/opt/pytxhorn/var/pytxhorn.pid}
+lockfile=${LOCKFILE-/opt/pytxhorn/var/pytxhorn.lock}
+supervisord="/usr/local/bin/supervisord"
+RETVAL=0
+CONF_PATH="/opt/pytxhorn/etc/runtime/supervisor/supervisord.conf"
+OPTIONS="--pidfile ${pidfile} -c $CONF_PATH"
+
+start() {
+    #export http_proxy="http://127.0.0.1:8123"
+    #export https_proxy="https://127.0.0.1:8123"
+    $supervisord $OPTIONS
+    RETVAL=$?
+    [ $RETVAL = 0 ] && touch ${lockfile}
+    echo
+    return $RETVAL
+
+}
+
+stop() {
+    /usr/local/bin/supervisorctl -c $CONF_PATH  stop all   >>$SHUT_DOWN_LOG 2>&1
+    killproc -p ${pidfile}  $supervisord
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+
+}
+
+
+console() {
+    /usr/local/bin/supervisorctl -c $CONF_PATH
+}
+
+
+# See how we were called.
+case "$1" in
+start)
+    case "$2" in
+    all)
+        start
+        ;;
+    *)
+        start
+        ;;
+    esac
+    ;;
+stop)
+    case "$2" in
+    all)
+        stop
+        ;;
+    *)
+        stop
+        ;;
+    esac
+    ;;
+restart)
+    stop
+    start
+;;
+console)
+    console
+;;
+*)
+    echo $"Usage: $0 {start|stop|restart|console}"
+        exit 1
+    ;;
+esac
+exit $RETVAL
