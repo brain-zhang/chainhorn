@@ -13,7 +13,8 @@ SHUT_DOWN_LOG=${SCRIPT_LOG_LOCATION}/shutdown
 prog="supervisord"
 pidfile=${PIDFILE-/opt/pytxhorn/var/run/pytxhorn.pid}
 lockfile=${LOCKFILE-/opt/pytxhorn/var/run/pytxhorn.lock}
-supervisord="/usr/local/bin/supervisord"
+supervisord=`which supervisord`
+supervisorctl=`which supervisorctl`
 RETVAL=0
 CONF_PATH="/opt/pytxhorn/etc/runtime/supervisor/supervisord.conf"
 OPTIONS="--pidfile ${pidfile} -c $CONF_PATH"
@@ -30,7 +31,7 @@ start() {
 }
 
 stop() {
-    /usr/local/bin/supervisorctl -c $CONF_PATH  stop all   >>$SHUT_DOWN_LOG 2>&1
+    $supervisorctl -c $CONF_PATH  stop all   >>$SHUT_DOWN_LOG 2>&1
     killproc -p ${pidfile}  $supervisord
     RETVAL=$?
     echo
@@ -40,7 +41,7 @@ stop() {
 
 
 console() {
-    /usr/local/bin/supervisorctl -c $CONF_PATH
+    $supervisorctl -c $CONF_PATH
 }
 
 
