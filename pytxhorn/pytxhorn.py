@@ -9,10 +9,12 @@ from contrib.pyspv import pyspv
 from contrib.pyspv.util import DEBUG, INFO, WARNING, hexstring_to_bytes
 from contrib.pyspv.bitcoin import Bitcoin
 from contrib.pyspv.transaction import Transaction
+from contrib.logging import init_logging
 from flask import Flask
 from flask import request
 from flask_restful import Resource, Api
 
+init_logging()
 app = Flask(__name__)
 api = Api(app)
 
