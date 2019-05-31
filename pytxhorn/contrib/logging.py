@@ -16,8 +16,7 @@ def init_logging():
         'handlers': {
             'wsgi': {
                 'class': 'logging.StreamHandler',
-                # 'stream': 'ext://flask.logging.wsgi_errors_stream',
-                'stream': 'ext://sys.stderr',
+                'stream': 'ext://flask.logging.wsgi_errors_stream',
                 'formatter': 'default'
             },
             'console': {
@@ -29,6 +28,7 @@ def init_logging():
         'loggers': {
             'default': {
                 'handlers': ['console'],
+                'propagate': 0,
                 'level': LOGGING_LEVEL,
             },
             'ohter': {
@@ -38,6 +38,6 @@ def init_logging():
         },
         'root': {
             'level': LOGGING_LEVEL,
-            'handlers': ['wsgi', 'console']
+            'handlers': ['console']
         }
     })
