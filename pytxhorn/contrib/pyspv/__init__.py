@@ -2,6 +2,7 @@ import argparse
 import ipaddress
 import sys
 import time
+import logging
 
 from . import blockchain
 from . import inv
@@ -26,8 +27,12 @@ from .payments.stealth import StealthAddressPayment
 
 from .util import *
 
+from .. import include
+
 VERSION = 'pyspv 0.0.1-alpha1'
 VERSION_NUMBER = 0x00000101
+
+logger = logging.getLogger('default')
 
 class pyspv:
     '''SPV encapsulation class.  One instance of this class is enough to manage a wallet, transactions,
@@ -75,8 +80,7 @@ class pyspv:
 
         self.config = Config(app_name, self.coin, testnet=testnet)
 
-        if self.logging_level <= DEBUG:
-            print('[PYSPV] app data at {}'.format(self.config.path))
+        logger.info('[PYSPV] app data at {}'.format(self.config.path))
 
         # It's important that the txdb be available before the wallet loads (computing balance requires knowing confirmations in the spends)
         # And the txdb requires the blockchain to be loaded

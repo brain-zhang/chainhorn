@@ -3,6 +3,9 @@
 import logging
 import logging.config
 
+from . import include
+from settings import LOGGING_LEVEL
+
 
 def init_logging():
     logging.config.dictConfig({
@@ -17,14 +20,24 @@ def init_logging():
                 'stream': 'ext://sys.stderr',
                 'formatter': 'default'
             },
-            'pyspv': {
+            'console': {
                 'class': 'logging.StreamHandler',
                 'stream': 'ext://sys.stderr',
                 'formatter': 'default'
             }
         },
+        'loggers': {
+            'default': {
+                'handlers': ['console'],
+                'level': LOGGING_LEVEL,
+            },
+            'ohter': {
+                'handlers': ['console'],
+                'level': 'INFO',
+            },
+        },
         'root': {
-            'level': 'INFO',
-            'handlers': ['wsgi', 'pyspv']
+            'level': LOGGING_LEVEL,
+            'handlers': ['wsgi', 'console']
         }
     })

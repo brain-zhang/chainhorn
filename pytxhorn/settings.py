@@ -31,6 +31,9 @@ WEB_HOST_IP = '0.0.0.0'
 WEB_HOST_PORT = 5000
 
 
+LOGGING_LEVEL = 'INFO'
+
+
 # add your settings before these code if you want to make it in local_settings.py
 try:
     from local_settings import *
