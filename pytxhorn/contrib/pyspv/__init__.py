@@ -27,7 +27,6 @@ from .payments.stealth import StealthAddressPayment
 
 from .util import *
 
-from .. import include
 
 VERSION = 'pyspv 0.0.1-alpha1'
 VERSION_NUMBER = 0x00000101
@@ -42,8 +41,6 @@ class pyspv:
     :type app_name: string
     :param testnet: enables testnet for the specified coin
     :type testnet: boolean
-    :param logging_level: the print logging level
-    :type logging_level: DEBUG, INFO, WARNING, ERROR, or CRITICAL
     :param peer_goal: target number of peers to maintain connections with
     :type peer_goal: integer
     :param listen: the listen address to be used with socket.bind
@@ -56,10 +53,9 @@ class pyspv:
     :type sync_block_start: integer or None
     '''
 
-    def __init__(self, app_name, testnet=False, peer_goal=8, broadcast_peer_goal=8, logging_level=WARNING, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None):
+    def __init__(self, app_name, testnet=False, peer_goal=8, broadcast_peer_goal=8, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None):
         self.app_name = app_name
         self.time_offset = 0
-        self.logging_level = logging_level
         self.time_samples = []
         self.sync_block_start = sync_block_start
 
@@ -151,8 +147,7 @@ class pyspv:
         if len(self.time_samples) >= 5 and (len(self.time_samples) % 2) == 1:
             m = list(sorted(self.time_samples))[(len(self.time_samples) // 2) + 1]
             if abs(m) < 70 * 60:
-                if self.logging_level <= DEBUG:
-                    print('[PYSPV] peer time offset = {} sec'.format(m))
+                logger.debug('[PYSPV] peer time offset = {} sec'.format(m))
                 self.time_offset = m
             else:
                 # TODO - we should inform the app that we can't get good time data

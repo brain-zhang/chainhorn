@@ -50,7 +50,7 @@ spv = PyspvSingleton(app_name=settings.APPNAME,
                      peer_goal=settings.BITCOIN_NETWORK_PEER_GOAL,
                      broadcast_peer_goal=settings.BITCOIN_NETWORK_BROADCAST_PEER_GOAL,
                      listen=(settings.HOST_IP, settings.HOST_PORT),
-                     logging_level=WARNING)
+                    )
 
 
 class GetAllPeers(Resource):

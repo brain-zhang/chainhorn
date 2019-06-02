@@ -1,7 +1,9 @@
 import collections
 import ipaddress
+import logging
 import random
 import socket
+import sys
 import struct
 import threading
 import time
@@ -16,13 +18,14 @@ from .serialize import Serialize
 from .transaction import Transaction
 from .util import *
 
-################################################################################
-################################################################################
+
+logger = logging.getLogger('default')
+
+
 class OutOfPeers(Exception):
     pass
 
-################################################################################
-################################################################################
+
 class Manager(threading.Thread):
     REQUEST_WAIT = 0
     REQUEST_GO = 1
@@ -34,6 +37,7 @@ class Manager(threading.Thread):
     SERVICES = 1
 
     BLOCKCHAIN_SYNC_WAIT_TIME = 10
+
 
     HEADERS_REQUEST_TIMEOUT   = 25
     GETBLOCKS_REQUEST_TIMEOUT = 60
@@ -117,8 +121,7 @@ class Manager(threading.Thread):
                 continue
             p.join(*args, **kwargs)
             if p.is_alive():
-                import sys
-                print("*** STACKTRACE - START :: peer({}) ***".format(p.peer_address))
+                logger.info("*** STACKTRACE - START :: peer({}) ***".format(p.peer_address))
                 code = []
                 for thread_id, stack in sys._current_frames().items():
                     code.append("\n# Thread ID: {}".format(thread_id))
@@ -128,16 +131,15 @@ class Manager(threading.Thread):
                             code.append("  {}".format(line.strip()))
 
                 for line in code:
-                    print(line, end='')
+                    logger.info(line, end='')
 
-                print("\n*** STACKTRACE - END ***")
+                logger.info("\n*** STACKTRACE - END ***")
         threading.Thread.join(self, *args, **kwargs)
 
     def run(self):
         self.running = True
 
-        if self.spv.logging_level <= DEBUG:
-            print("[NETWORK] starting")
+        logger.debug("[NETWORK] starting")
 
         self.start_listening()
 
@@ -163,8 +165,7 @@ class Manager(threading.Thread):
 
             time.sleep(0.01)
 
-        if self.spv.logging_level <= DEBUG:
-            print("[NETWORK] stopping")
+        logger.debug("[NETWORK] stopping")
 
         if self.listen_socket is not None:
             self.listen_socket.close()
@@ -188,12 +189,10 @@ class Manager(threading.Thread):
             ipaddress.IPv4Address(peer_address[0]).packed
         except ipaddress.AddressValueError:
             # peer_address[0] is probably an IPv6 address
-            if self.spv.logging_level <= INFO:
-                print("[NETWORK] peer address {} is not valid IPv4".format(peer_address[0]))
+            logger.info("[NETWORK] peer address {} is not valid IPv4".format(peer_address[0]))
             return False
 
-        if self.spv.logging_level <= DEBUG:
-            print("[NETWORK] new peer found", peer_address)
+        logger.info("[NETWORK] new peer found:{}".format(peer_address))
 
         self.peer_addresses[peer_address] = {
             'last_successful_connection_time': 0.0,
@@ -256,8 +255,7 @@ class Manager(threading.Thread):
                         'index': self.peer_index,
                     }
                     self.peer_index += 1
-            if self.spv.logging_level <= DEBUG:
-                print("[NETWORK] {} peer addresses loaded".format(len(self.peer_addresses)))
+            logger.debug("[NETWORK] {} peer addresses loaded".format(len(self.peer_addresses)))
         except FileNotFoundError:
             pass
 
@@ -272,8 +270,7 @@ class Manager(threading.Thread):
         try:
             self.listen_socket.bind(self.listen_address)
         except OSError:
-            if self.spv.logging_level <= WARNING:
-                print("[NETWORK] couldn't listen on address {}".format(self.listen_address))
+            logger.warning("[NETWORK] couldn't listen on address {}".format(self.listen_address))
             self.listen_socket.close()
             self.listen_socket = None
             return
@@ -290,8 +287,7 @@ class Manager(threading.Thread):
         except (socket.timeout, BlockingIOError):
             return
 
-        if self.spv.logging_level <= DEBUG:
-            print('[MANAGER] incoming connection from {}'.format(peer_address))
+        logger.debug('[MANAGER] incoming connection from {}'.format(peer_address))
 
         if not self.add_peer_address(peer_address):
             sock.close()
@@ -329,17 +325,16 @@ class Manager(threading.Thread):
                 self.start_new_peer()
         except OutOfPeers:
             # TODO - handle out of peers case
-            if self.spv.logging_level < WARNING:
-                traceback.print_exc()
+            logger.warning(traceback.format_exc())
 
     def start_new_peer(self):
         peer_addresses = list(self.peer_addresses.keys())
         while len(peer_addresses) > 0:
             k = random.randrange(0, len(peer_addresses))
-            peer_addresses[k], peer_addresses[len(peer_addresses)-1] = peer_addresses[len(peer_addresses)-1], peer_addresses[k]
+            peer_addresses[k], peer_addresses[len(peer_addresses) - 1] = peer_addresses[len(peer_addresses) - 1], peer_addresses[k]
             p = peer_addresses.pop()
-            #p_ = ('127.0.0.1', 18333)
-            #if p_ not in self.peers:
+            # p_ = ('127.0.0.1', 18333)
+            # if p_ not in self.peers:
             #    p = p_
             if p not in self.peers:
                 self.peers[p] = Peer(self, p)
@@ -575,19 +570,17 @@ class Peer(threading.Thread):
     def run(self):
         self.state = 'init'
         self.running = True
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} Peer starting...".format(self.peer_address))
+        logger.debug("[PEER] {} Peer starting...".format(self.peer_address))
         while self.running:
             try:
                 self.step()
-            except:
-                traceback.print_exc()
+            except Exception:
+                logger.warning(traceback.format_exc())
                 break
             time.sleep(0.1)
 
         self.step()
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} Peer exiting ({} bytes recv/{} bytes sent)...".format(self.peer_address, self.bytes_received, self.bytes_sent))
+        logger.debug("[PEER] {} Peer exiting ({} bytes recv/{} bytes sent)...".format(self.peer_address, self.bytes_received, self.bytes_sent))
 
     def step(self):
         if self.state == 'init':
@@ -637,14 +630,12 @@ class Peer(threading.Thread):
         try:
             self.socket.connect(self.peer_address)
             self.socket.settimeout(0.1)
-            if self.manager.spv.logging_level <= DEBUG:
-                print("[PEER] {} connected.".format(self.peer_address))
+            logger.debug("[PEER] {} connected.".format(self.peer_address))
             return True
-        except:
+        except Exception as _:
             self.state = 'dead'
             self.manager.peer_is_bad(self.peer_address)
-            if self.manager.spv.logging_level <= DEBUG:
-                print("[PEER] {} could not connect.".format(self.peer_address))
+            logger.debug("[PEER] {} could not connect.".format(self.peer_address))
             return False
 
     def close_connection(self):
@@ -652,9 +643,9 @@ class Peer(threading.Thread):
             if self.socket is not None:
                 self.socket.close()
                 self.socket = None
-        except:
+        except Exception:
             # TODO :: catch the proper exception / close properly
-            traceback.print_exc()
+            logger.warning(traceback.format_exc())
 
     def handle_incoming_data(self):
         try:
@@ -668,8 +659,7 @@ class Peer(threading.Thread):
 
         # zero length data means we've lost connection
         if len(data) == 0:
-            if self.manager.spv.logging_level <= DEBUG:
-                print("[PEER] {} connection lost.".format(self.peer_address))
+            logger.debug("[PEER] {} connection lost.".format(self.peer_address))
             self.state = 'dead'
             return
 
@@ -681,8 +671,7 @@ class Peer(threading.Thread):
             self.inprogress_command = command
 
             if length is not None and length > Manager.MAX_MESSAGE_SIZE:
-                if self.manager.spv.logging_level <= WARNING:
-                    print("[PEER] {} sent a large message. dropping.".format(self.peer_address))
+                logger.debug("[PEER] {} sent a large message. dropping.".format(self.peer_address))
                 self.state = 'dead'
                 break
 
@@ -701,8 +690,7 @@ class Peer(threading.Thread):
                     self.outgoing_data_queue.appendleft(q[r:])
                     return
             except (ConnectionAbortedError, OSError):
-                if self.manager.spv.logging_level <= DEBUG:
-                    traceback.print_exc()
+                logger.debug(traceback.format_exc())
                 self.state = 'dead'
                 break
 
@@ -717,8 +705,7 @@ class Peer(threading.Thread):
         try:
             cmd = getattr(self, 'cmd_' + command)
         except AttributeError:
-            if self.manager.spv.logging_level <= WARNING:
-                print('[PEER] {} unhandled command {}'.format(self.peer_address, command))
+            logger.warning('[PEER] {} unhandled command {}'.format(self.peer_address, command))
             return
 
         cmd(payload)
@@ -748,8 +735,7 @@ class Peer(threading.Thread):
                 if self.syncing_blockchain == 2:
                     self.state = 'dead'
                     self.manager.peer_is_bad(self.peer_address)
-                    if self.manager.spv.logging_level <= DEBUG:
-                        print("[PEER] {} peer is messing with our blockchain sync".format(self.peer_address))
+                    logger.debug("[PEER] {} peer is messing with our blockchain sync".format(self.peer_address))
                 else:
                     self.syncing_blockchain = 0
             return
@@ -805,8 +791,7 @@ class Peer(threading.Thread):
             if len(inprogress_block_invs):
                 if self.inprogress_command != 'block' and (now - self.last_block_inv_time) > Manager.BLOCK_REQUEST_TIMEOUT:
                     # Peer is ignoring our request for blocks...
-                    if self.manager.spv.logging_level <= WARNING:
-                        print('[PEER] {} peer is ignoring our request for blocks'.format(self.peer_address))
+                    logger.warning('[PEER] {} peer is ignoring our request for blocks'.format(self.peer_address))
                     self.state = 'dead'
                     return
 
@@ -929,13 +914,11 @@ class Peer(threading.Thread):
         data.append(Serialize.serialize_variable_int(len(invs)))
         for inv in invs:
             data.append(inv.serialize())
-            if self.manager.spv.logging_level <= INFO:
-                print("send inventory:{}, peer:{}".format(str(inv), self.peer_address))
+            logger.info("send inventory:{}, peer:{}".format(str(inv), self.peer_address))
 
         payload = b''.join(data)
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "inv", payload))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent inv for {} items".format(self.peer_address, len(invs)))
+        logger.debug("[PEER] {} sent inv for {} items".format(self.peer_address, len(invs)))
 
     def send_getdata(self, invs):
         data = []
@@ -944,34 +927,29 @@ class Peer(threading.Thread):
 
         payload = Serialize.serialize_variable_int(len(data)) + b''.join(data)
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "getdata", payload))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent getdata for {} items".format(self.peer_address, len(invs)))
+        logger.debug("[PEER] {} sent getdata for {} items".format(self.peer_address, len(invs)))
 
     def send_getheaders(self, block_locator):
         last_block = (b'\x00' * 32)
         payload = struct.pack("<L", Manager.PROTOCOL_VERSION) + block_locator.serialize() + last_block
 
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "getheaders", payload))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent getheaders (block_locator top={})".format(self.peer_address, bytes_to_hexstring(block_locator.hashes[0])))
+        logger.debug("[PEER] {} sent getheaders (block_locator top={})".format(self.peer_address, bytes_to_hexstring(block_locator.hashes[0])))
 
     def send_getblocks(self, block_locator):
         last_block = (b'\x00' * 32)
         payload = struct.pack("<L", Manager.PROTOCOL_VERSION) + block_locator.serialize() + last_block
 
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "getblocks", payload))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent getblocks".format(self.peer_address))
+        logger.debug("[PEER] {} sent getblocks".format(self.peer_address))
 
     def send_tx(self, inv, tx_data):
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "tx", tx_data))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
+        logger.debug("[PEER] {} sent tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
 
     def send_block(self, inv, block_data):
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "block", block_data))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent block {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
+        logger.debug("[PEER] {} sent block {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
 
     def send_addr(self, addresses):
         data = []
@@ -980,13 +958,11 @@ class Peer(threading.Thread):
 
         payload = Serialize.serialize_variable_int(len(addresses)) + b''.join(data)
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "addr", payload))
-        if self.manager.spv.logging_level <= DEBUG:
-            print("[PEER] {} sent addr for {} addresses".format(self.peer_address, len(addresses)))
+        logger.debug("[PEER] {} sent addr for {} addresses".format(self.peer_address, len(addresses)))
 
     def cmd_version(self, payload):
         if len(payload) < 20:
-            if self.manager.spv.logging_level <= WARNING:
-                print('[PEER] {} sent badly formatted version command'.format(self.peer_address))
+            logger.warning('[PEER] {} sent badly formatted version command'.format(self.peer_address))
             self.state = 'dead'
             return
 
@@ -1003,26 +979,22 @@ class Peer(threading.Thread):
             # Not enough data usually
             self.state = 'dead'
             self.manager.peer_is_bad(self.peer_address)
-            if self.manager.spv.logging_level <= DEBUG:
-                print("[PEER] {} bad version {}".format(self.peer_address, self.peer_version))
+            logger.debug("[PEER] {} bad version {}".format(self.peer_address, self.peer_version))
             return
 
-        if self.manager.spv.logging_level <= INFO:
-            print("[PEER] {} version {} (User-agent {}, last block {})".format(self.peer_address, self.peer_version, self.peer_user_agent, self.peer_last_block))
+        logger.info("[PEER] {} version {} (User-agent {}, last block {})".format(self.peer_address, self.peer_version, self.peer_user_agent, self.peer_last_block))
 
         time_offset = abs(self.peer_time - time.time())
-        if time_offset > 140*60:
+        if time_offset > 140 * 60:
             # Peer time is just too out of wack.
-            if self.manager.spv.logging_level <= WARNING:
-                print("[PEER] {} peer's clock (or yours!) is off by too much ({} sec)".format(self.peer_address, time_offset))
+            logger.warning("[PEER] {} peer's clock (or yours!) is off by too much ({} sec)".format(self.peer_address, time_offset))
             self.state = 'dead'
             return
 
         # Let's only connect to peers that are fully synced.  If we connect to a syncing peer, it doesn't
         # really benefit us and it possibly harms them since we can't send them blocks.
         if self.peer_last_block < self.manager.spv.blockchain.get_best_chain_height():
-            if self.manager.spv.logging_level <= INFO:
-                print("[PEER] {} peer doesn't have a blockchain longer than ours".format(self.peer_address))
+            logger.info("[PEER] {} peer doesn't have a blockchain longer than ours".format(self.peer_address))
             self.state = 'dead'
             return
 
@@ -1059,8 +1031,7 @@ class Peer(threading.Thread):
         for i in range(count):
             inv, payload = Inv.unserialize(payload)
 
-            if self.manager.spv.logging_level <= INFO:
-                print('[PEER] {} got {}'.format(self.peer_address, str(inv)))
+            logger.info('[PEER] {} got {}'.format(self.peer_address, str(inv)))
 
             if inv.type == Inv.MSG_BLOCK:
                 # Doesn't matter if this was a getblocks request or
@@ -1076,8 +1047,7 @@ class Peer(threading.Thread):
         tx_hash = tx.hash()
         inv = Inv(Inv.MSG_TX, tx_hash)
 
-        if self.manager.spv.logging_level <= INFO:
-            print("[PEER] {} got tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
+        logger.info("[PEER] {} got tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
 
         if inv in self.inprogress_invs:
             self.manager.received_transaction(inv, tx)
@@ -1098,14 +1068,12 @@ class Peer(threading.Thread):
             bad_peer = not block_header.check() or tx_count != 0
             if bad_peer:
                 # Misbehaving peer: all headers are actually blocks with 0 transactions
-                if self.manager.spv.logging_level <= WARNING:
-                    print("[PEER] {} sent bad headers".format(self.peer_address, len(headers)))
+                logger.warning("[PEER] {} sent bad headers".format(self.peer_address, len(headers)))
                 self.manager.peer_is_bad(self.peer_address)
                 self.state = 'dead'
                 return
 
-        if self.manager.spv.logging_level <= INFO:
-            print("[PEER] {} got {} headers".format(self.peer_address, len(headers)))
+        logger.warning("[PEER] {} got {} headers".format(self.peer_address, len(headers)))
 
         if not self.manager.received_headers(headers):
             if len(headers) != 0:
@@ -1120,16 +1088,14 @@ class Peer(threading.Thread):
 
         if not block.check():
             # peer sent a bad block?
-            if self.manager.spv.logging_level <= WARNING:
-                print("[PEER] {} peer sent bad block {}".format(self.peer_address, block))
+            logger.warning("[PEER] {} peer sent bad block {}".format(self.peer_address, block))
             self.manager.peer_is_bad(self.peer_address)
             self.state = 'dead'
             return
 
         inv = Inv(Inv.MSG_BLOCK, block.header.hash())
         if inv in self.inprogress_invs:
-            if self.manager.spv.logging_level <= INFO:
-                print("[PEER] {} got {}".format(self.peer_address, block))
+            logger.info("[PEER] {} got {}".format(self.peer_address, block))
 
             self.manager.received_block(inv, block, self.syncing_blockchain != 0)
             self.inprogress_invs.pop(inv)
@@ -1149,12 +1115,10 @@ class Peer(threading.Thread):
             inv, payload = Inv.unserialize(payload)
             self.requested_invs.append((inv, now))
 
-        if self.manager.spv.logging_level <= INFO:
-            print('[PEER] {} requested {} items'.format(self.peer_address, count))
+        logger.info('[PEER] {} requested {} items'.format(self.peer_address, count))
 
     def cmd_getblocks(self, payload):
-        if self.manager.spv.logging_level <= DEBUG:
-            print('[PEER] {} ignoring getblocks command'.format(self.peer_address))
+        logger.debug('[PEER] {} ignoring getblocks command'.format(self.peer_address))
 
     def cmd_getaddr(self, payload):
         # Select random addresses and send them
@@ -1162,4 +1126,3 @@ class Peer(threading.Thread):
         random.shuffle(peer_addresses)
         peer_addresses = peer_addresses[:10]
         self.send_addr(peer_addresses)
-

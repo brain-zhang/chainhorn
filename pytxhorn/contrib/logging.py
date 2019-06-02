@@ -33,11 +33,13 @@ def init_logging():
             },
             'ohter': {
                 'handlers': ['console'],
+                'propagate': 0,
                 'level': 'INFO',
             },
         },
         'root': {
             'level': LOGGING_LEVEL,
+            'propagate': 0,
             'handlers': ['console']
         }
     })

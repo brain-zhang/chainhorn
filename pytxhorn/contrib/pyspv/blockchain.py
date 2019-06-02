@@ -1,5 +1,5 @@
 import collections
-import os
+import logging
 import shelve
 import threading
 import time
@@ -11,6 +11,9 @@ from .serialize import Serialize
 from .script import Script
 from .util import *
 
+logger = logging.getLogger('default')
+
+
 class Blockchain:
     SAVED_BLOCKCHAIN_LENGTH = 100
 
@@ -18,16 +21,16 @@ class Blockchain:
         assert (spv.coin.CHECKPOINT_BLOCK_HEIGHT % spv.coin.WORK_INTERVAL) == 0
 
         self.spv = spv
-        self.saved_blockchain_length = max(Blockchain.SAVED_BLOCKCHAIN_LENGTH, self.spv.coin.WORK_INTERVAL) # Save at least WORK_INTERVAL blocks
+        self.saved_blockchain_length = max(Blockchain.SAVED_BLOCKCHAIN_LENGTH, self.spv.coin.WORK_INTERVAL)  # Save at least WORK_INTERVAL blocks
 
         self.blockchain_db_file = spv.config.get_file("blockchain")
-        self.blockchain_lock = threading.Lock() # TODO use RLock?
+        self.blockchain_lock = threading.Lock()  # TODO use RLock?
 
         genesis = self.create_block_link(hash=self.spv.coin.GENESIS_BLOCK_HASH, height=0, main=True, connected=True, header=BlockHeader(spv.coin, timestamp=self.spv.coin.GENESIS_BLOCK_TIMESTAMP, bits=self.spv.coin.GENESIS_BLOCK_BITS))
         checkpoint = self.create_block_link(hash=self.spv.coin.CHECKPOINT_BLOCK_HASH, height=self.spv.coin.CHECKPOINT_BLOCK_HEIGHT, main=True, connected=True, header=BlockHeader(spv.coin, timestamp=self.spv.coin.CHECKPOINT_BLOCK_TIMESTAMP, bits=self.spv.coin.CHECKPOINT_BLOCK_BITS))
 
         self.blocks = {
-            self.spv.coin.GENESIS_BLOCK_HASH   : genesis,
+            self.spv.coin.GENESIS_BLOCK_HASH: genesis,
             self.spv.coin.CHECKPOINT_BLOCK_HASH: checkpoint,
         }
 
@@ -62,13 +65,12 @@ class Blockchain:
                 links = db['blockchain']['links']
 
                 start_time = time.time()
-                if self.spv.logging_level <= INFO:
-                    print('[BLOCKCHAIN] loading blockchain headers...')
+                logger.info('[BLOCKCHAIN] loading blockchain headers...')
 
                 for i in range(db['blockchain']['count']):
                     index = (start + i) % self.saved_blockchain_length
                     link = links[index]
-                    #print('connecting {}/{}, {}'.format(i, db['blockchain']['count'], bytes_to_hexstring(link['hash'])))
+                    logger.debug('connecting {}/{}, {}'.format(i, db['blockchain']['count'], bytes_to_hexstring(link['hash'])))
 
                     header, _ = BlockHeader.unserialize(link['header'], self.spv.coin)
                     block_link = self.create_block_link(header.hash(), height=link['height'], work=link['work'], header=header)
@@ -84,12 +86,11 @@ class Blockchain:
                         self.best_chain = block_link
                     else:
                         if self.best_chain is not block_link:
-                            #print("Error connecting block {}".format(str(block_link['header'])))#bytes_to_hexstring(block_link['hash'])))
-                            #print("best block is {}".format(str(self.best_chain['header'])))#bytes_to_hexstring(self.best_chain['hash'])))
+                            logger.error("Error connecting block {}".format(str(block_link['header'])))  # bytes_to_hexstring(block_link['hash'])))
+                            logger.error("best block is {}".format(str(self.best_chain['header'])))  # bytes_to_hexstring(self.best_chain['hash'])))
                             raise Exception("Uh oh. Blockchain state is corrupted. Loaded {} blocks to height {}.".format(i, self.best_chain['height']))
 
-                if self.spv.logging_level <= INFO:
-                    print('[BLOCKCHAIN] done ({:5.3f} sec)'.format(time.time()-start_time))
+                logger.info('[BLOCKCHAIN] done ({:5.3f} sec)'.format(time.time() - start_time))
 
     def create_block_link(self, hash, height=0, main=False, connected=False, prev=None, header=None, work=None):
         if work is None and header is not None:
@@ -98,13 +99,13 @@ class Blockchain:
             work = 0
 
         return {
-            'hash'     : hash,
-            'height'   : height,
-            'main'     : main,
+            'hash': hash,
+            'height': height,
+            'main': main,
             'connected': connected,
-            'prev'     : prev,
-            'header'   : header,
-            'work'     : work,
+            'prev': prev,
+            'header': header,
+            'work': work,
         }
 
     def get_best_chain_locator(self):
@@ -121,7 +122,7 @@ class Blockchain:
         # The incoming headers must ALL connect, but they are allowed to disconnect some blocks
         # before connecting into the chain.
         if len(block_headers) == 0:
-            print('no headers')
+            logger.warning('no headers')
             return False
 
         # First, link all the block_headers that were given
@@ -131,27 +132,27 @@ class Blockchain:
         for i in range(1, len(block_headers)):
             new_block_links.append(self.create_block_link(hash=block_headers[i].hash(), header=block_headers[i]))
 
-            if block_headers[i].prev_block_hash != new_block_links[i-1]['hash']:
+            if block_headers[i].prev_block_hash != new_block_links[i - 1]['hash']:
                 # The chain of headers we were just given doesn't connect to eachother
                 return False
 
-            new_block_links[i]['prev'] = new_block_links[i-1]
+            new_block_links[i]['prev'] = new_block_links[i - 1]
 
         changes = []
         with self.blockchain_lock:
             if not self.needs_headers:
-                print('doesnt need headers')
+                logger.warning('doesnt need headers')
                 return False
 
             # All of the blocks must be new
             if any(block_link['hash'] in self.blocks for block_link in new_block_links):
-                print('seen some of the block headers before')
+                logger.warning('seen some of the block headers before')
                 return False
 
             # make sure the first block connects
             prev = self.blocks.get(block_headers[0].prev_block_hash, None)
             if prev is None:
-                print('first block doesnt connect')
+                logger.warning('first block doesnt connect')
                 return False
 
             with closing(shelve.open(self.blockchain_db_file)) as db:
@@ -165,7 +166,7 @@ class Blockchain:
                     assert self.best_chain is new_block_link
 
                     if (self.best_chain['header'].timestamp >= self.spv.wallet.creation_time - (24 * 60 * 60)) or (self.sync_block_start is not None and self.best_chain['height'] >= self.sync_block_start):
-                        print('headers sync done, switching to full blocks')
+                        logger.info('headers sync done, switching to full blocks')
                         self.needs_headers = db['needs_headers'] = False
                         break
 
@@ -173,8 +174,7 @@ class Blockchain:
 
             self.__run_changes(changes)
 
-        if self.spv.logging_level <= INFO:
-            print("[BLOCKCHAIN] added {} headers (new height = {})".format(len(new_block_links), self.best_chain['height']))
+        logger.info("[BLOCKCHAIN] added {} headers (new height = {})".format(len(new_block_links), self.best_chain['height']))
 
         return True
 
@@ -205,9 +205,8 @@ class Blockchain:
     def __connect_block_link(self, blockchain, block_link, skip_validation=False):
         changes = []
 
-        if block_link['hash'] in self.blocks: 
-            if self.spv.logging_level <= DEBUG:
-                print("[BLOCKCHAIN] already have {}".format(bytes_to_hexstring(block_link['hash'])))
+        if block_link['hash'] in self.blocks:
+            logger.debug("[BLOCKCHAIN] already have {}".format(bytes_to_hexstring(block_link['hash'])))
             return []
 
         self.blocks[block_link['hash']] = block_link
@@ -220,7 +219,7 @@ class Blockchain:
 
             if hash_to_check not in self.unknown_referenced_blocks or hash_to_check not in self.blocks or not self.blocks[hash_to_check]['connected']:
                 continue
-            
+
             for referenced_by_block_hash in self.unknown_referenced_blocks.pop(hash_to_check):
                 referenced_by_block_link = self.blocks[referenced_by_block_hash]
                 assert referenced_by_block_link['header'].prev_block_hash == hash_to_check
@@ -276,7 +275,7 @@ class Blockchain:
                                 (self.spv.testnet and self.__is_block_majority(2, self.blocks[hash_to_check], 75, 100)):
                             error = "block should not be version 1"
                             break
-                    
+
                     break
 
                 if error is None:
@@ -293,17 +292,17 @@ class Blockchain:
                     hashes_to_check.append(referenced_by_block_hash)
                 else:
                     # This block is bad. Remove it from everything.
-                    print('[BLOCKCHAIN] invalid block {}: {}'.format(bytes_to_hexstring(referenced_by_block_hash), error))
+                    logger.warning('[BLOCKCHAIN] invalid block {}: {}'.format(bytes_to_hexstring(referenced_by_block_hash), error))
 
                     self.blocks.pop(referenced_by_block_hash)
 
                     if referenced_by_block_hash in self.unknown_referenced_blocks:
                         self.unknown_referenced_blocks.pop(referenced_by_block_hash)
 
-        if self.spv.logging_level <= INFO and not block_link['connected'] and blockchain is not None:
+        if not block_link['connected'] and blockchain is not None:
             # TODO Should we store orphaned blocks on disk so that they aren't fetched from the network
             # upon restarting?
-            print("[BLOCKCHAIN] orphaned {}".format(bytes_to_hexstring(block_link['hash'])))
+            logger.info("[BLOCKCHAIN] orphaned {}".format(bytes_to_hexstring(block_link['hash'])))
 
         return changes
 
@@ -348,11 +347,10 @@ class Blockchain:
 
         bits = target_to_bits(target)
 
-        if self.spv.logging_level <= DEBUG:
-            print("[BLOCKCHAIN] block work retarget!!")
-            print("[BLOCKCHAIN]     target timespan = {}    actual timespan = {}".format(self.spv.coin.TARGET_BLOCK_TIMESPAN, timespan))
-            print("[BLOCKCHAIN]     before: {:08x}  {:064x}".format(prev_block_link['header'].bits, bits_to_target(prev_block_link['header'].bits)))
-            print("[BLOCKCHAIN]     after:  {:08x}  {:064x}  change: {:5.3f}%".format(bits, bits_to_target(bits), (target - bits_to_target(prev_block_link['header'].bits)) / bits_to_target(prev_block_link['header'].bits) * 100))
+        logger.debug("[BLOCKCHAIN] block work retarget!!")
+        logger.debug("[BLOCKCHAIN]     target timespan = {}    actual timespan = {}".format(self.spv.coin.TARGET_BLOCK_TIMESPAN, timespan))
+        logger.debug("[BLOCKCHAIN]     before: {:08x}  {:064x}".format(prev_block_link['header'].bits, bits_to_target(prev_block_link['header'].bits)))
+        logger.debug("[BLOCKCHAIN]     after:  {:08x}  {:064x}  change: {:5.3f}%".format(bits, bits_to_target(bits), (target - bits_to_target(prev_block_link['header'].bits)) / bits_to_target(prev_block_link['header'].bits) * 100))
 
         return bits
 
@@ -396,7 +394,7 @@ class Blockchain:
         old_best_chain = self.best_chain
         self.best_chain = new_best_chain
 
-        # Old chain being longer is actually a rare case 
+        # Old chain being longer is actually a rare case
         while old_best_chain['height'] > new_best_chain['height']:
             if blockchain is not None:
                 # drop count by one and notify SPV that a block was removed from the chain
@@ -412,7 +410,7 @@ class Blockchain:
         while new_best_chain['height'] > old_best_chain['height']:
             new_best_chain['main'] = True
             new_best_chain = new_best_chain['prev']
- 
+
         # At this point, new_best_chain['height'] == old_best_chain['height']
         assert new_best_chain['height'] == old_best_chain['height']
 
@@ -431,7 +429,7 @@ class Blockchain:
 
                 new_best_chain['main'] = True
                 new_best_chain = new_best_chain['prev']
-        
+
         # add the new chain (in order) and notify spv
         notify_block_links = []
         chain_fork = new_best_chain
@@ -467,10 +465,11 @@ class Blockchain:
 
             changes.append(('added', notify_block_link['header'], notify_block_link['height']))
 
-        if self.spv.logging_level <= INFO and blockchain is not None:
-            print('[BLOCKCHAIN] new best chain = {} (height={})'.format(bytes_to_hexstring(self.best_chain['hash']), self.best_chain['height']))
- 
+        if blockchain is not None:
+            logger.info('[BLOCKCHAIN] new best chain = {} (height={})'.format(bytes_to_hexstring(self.best_chain['hash']), self.best_chain['height']))
+
         return changes
+
 
 class BlockLocator:
     def __init__(self, block_link):
@@ -491,5 +490,3 @@ class BlockLocator:
 
     def __str__(self):
         return '<block_locator\n\t' + '\n\t'.join(['{}'.format(bytes_to_hexstring(block_hash)) for block_hash in self.hashes][::-1]) + '>'
-
-

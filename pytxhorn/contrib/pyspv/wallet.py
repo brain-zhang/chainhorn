@@ -1,19 +1,26 @@
-from collections import defaultdict
+import logging
 import random
 import shelve
 import threading
 import time
 
+from collections import defaultdict
 from contextlib import closing
 
 from .keys import PrivateKey
 from .util import *
 
+
+logger = logging.getLogger('default')
+
+
 class InvalidAddress(Exception):
     pass
 
+
 class DuplicateWalletItem(Exception):
     pass
+
 
 class Wallet:
     '''The Wallet is responsible for managing private keys and spendable inputs'''
@@ -46,12 +53,12 @@ class Wallet:
 
                 # TODO - delete this code after saving old keys
                 if 'keys' in d:
-                    print("!!!!!!!!!! OLD KEYS !!!!!!!!!!!!")
+                    logger.warning("!!!!!!!!!! OLD KEYS !!!!!!!!!!!!")
                     for key in d['keys']:
-                        print(PrivateKey.unserialize(key['key'])[0].as_wif(self.spv.coin, False))
-                        print(PrivateKey.unserialize(key['key'])[0].as_wif(self.spv.coin, True))
-                    print("!!!!!!!!!! OLD KEYS !!!!!!!!!!!!")
-                        
+                        logger.warning(PrivateKey.unserialize(key['key'])[0].as_wif(self.spv.coin, False))
+                        logger.warning(PrivateKey.unserialize(key['key'])[0].as_wif(self.spv.coin, True))
+                    logger.warning("!!!!!!!!!! OLD KEYS !!!!!!!!!!!!")
+
                 if 'wallet' not in d:
                     d['wallet'] = {}
 
@@ -76,7 +83,7 @@ class Wallet:
             spend, _ = spend_class.unserialize(spend_dict['data'], self.spv.coin)
             spend_hash = spend.hash()
             self.spends[spend.hash()] = {
-                'spend'   : spend,
+                'spend': spend,
             }
             self.spends_by_index.append(spend_hash)
             if not spend.is_spent(self.spv):
@@ -86,8 +93,7 @@ class Wallet:
                 if hasattr(m, 'on_new_spend'):
                     getattr(m, 'on_new_spend')(spend)
 
-        if self.spv.logging_level <= INFO:
-            print('[WALLET] loaded with balance of {} BTC'.format(dict(self.balance)))
+        logger.info('[WALLET] loaded with balance of {} BTC'.format(dict(self.balance)))
 
     def len(self, collection_name):
         with self.wallet_lock:
@@ -220,8 +226,7 @@ class Wallet:
                     if hasattr(m, 'on_new_spend'):
                         getattr(m, 'on_new_spend')(spend)
 
-                if self.spv.logging_level <= INFO:
-                    print('[WALLET] added {} to wallet category {} (new balance={})'.format(spend.amount, spend.category, self.balance[spend.category]))
+                logger.info('[WALLET] added {} to wallet category {} (new balance={})'.format(spend.amount, spend.category, self.balance[spend.category]))
 
                 return True
 
@@ -258,11 +263,9 @@ class Wallet:
                     self.balance[spend.category] += spend.amount
                     self.balance_spends.add(spend_hash)
 
-                if self.spv.logging_level <= INFO:
-                    print('[WALLET] updated {} in wallet category {} (new balance={})'.format(spend.amount, spend.category, self.balance[spend.category]))
+                logger.info('[WALLET] updated {} in wallet category {} (new balance={})'.format(spend.amount, spend.category, self.balance[spend.category]))
 
                 return True
-
 
     def select_spends(self, categories, amount, dont_select=None):
         if dont_select is None:
@@ -271,8 +274,7 @@ class Wallet:
         with self.wallet_lock:
             coins_ret = []
 
-            if self.spv.logging_level <= DEBUG:
-                print("[WALLET] select_spends: start for {} (categories={})".format(self.spv.coin.format_money(amount), ', '.join(categories)))
+            logger.debug("[WALLET] select_spends: start for {} (categories={})".format(self.spv.coin.format_money(amount), ', '.join(categories)))
 
             # build a list of spends where all spends are leq than the target
             # and keep track of the spellest spend over the target
@@ -294,39 +296,34 @@ class Wallet:
 
                 if not spend.is_spendable(self.spv):
                     continue
-                
+
                 # Only allow inputs from approved wallet categories
                 if spend.category not in categories:
                     continue
 
                 if spend.amount == amount:
-                    if self.spv.logging_level <= DEBUG:
-                        print("[WALLET] select_spends: found perfect match")
+                    logger.debug("[WALLET] select_spends: found perfect match")
                     return [spend]
                 elif spend.amount < (amount + self.spv.coin.DUST_LIMIT):
-                    if self.spv.logging_level <= DEBUG:
-                        print("[WALLET] select_spends: selecting {}".format(self.spv.coin.format_money(spend.amount)))
+                    logger.debug("[WALLET] select_spends: selecting {}".format(self.spv.coin.format_money(spend.amount)))
                     spends_below.append(spend)
                 elif spend_smallest_over_amount is None or spend.amount < spend_smallest_over_amount.amount:
                     spend_smallest_over_amount = spend
 
-            if self.spv.logging_level <= DEBUG and spend_smallest_over_amount is not None:
-                print("[WALLET] select_spends: smallest over target is {}".format(self.spv.coin.format_money(spend_smallest_over_amount.amount)))
-                    
+            if spend_smallest_over_amount is not None:
+                logger.debug("[WALLET] select_spends: smallest over target is {}".format(self.spv.coin.format_money(spend_smallest_over_amount.amount)))
+
             total_below = sum(spend.amount for spend in spends_below)
             if total_below == amount:
-                if self.spv.logging_level <= DEBUG:
-                    print("[WALLET] select_spends: sum of spends_below was a perfect match")
+                logger.debug("[WALLET] select_spends: sum of spends_below was a perfect match")
                 return spends_below
 
             if total_below < amount:
                 if spend_smallest_over_amount is None:
-                    if self.spv.logging_level <= WARNING:
-                        print("[WALLET] select_spends: couldn't find enough inputs (total_below is {})".format(total_below))
+                    logger.warning("[WALLET] select_spends: couldn't find enough inputs (total_below is {})".format(total_below))
                     return []
                 else:
-                    if self.spv.logging_level <= DEBUG:
-                        print("[WALLET] select_spends: spends_below don't supply enough value... using a single spend of {} instead".format(self.spv.coin.format_money(spend_smallest_over_amount.amount)))
+                    logger.warning("[WALLET] select_spends: spends_below don't supply enough value... using a single spend of {} instead".format(self.spv.coin.format_money(spend_smallest_over_amount.amount)))
                     return [spend_smallest_over_amount]
 
             # this can be slow if there are lots of dusty inputs
@@ -338,27 +335,24 @@ class Wallet:
             if best_total != amount and total_below >= amount + self.spv.coin.DUST_LIMIT:
                 best_spends = self.approximate_best_subset(spends_below, amount + self.spv.coin.DUST_LIMIT, 1000)
                 best_total = sum(spend.amount for spend in best_spends)
-                
+
             # if we have a bigger coin and either the stochastic approximation didn't find a good solution,
             # or the next bigger coin is closer, return the bigger coin
             if spend_smallest_over_amount is not None and ((best_total != amount and best_total < (amount + self.spv.coin.DUST_LIMIT)) or (spend_smallest_over_amount.amount <= best_total)):
                 coins_ret.append(spend_smallest_over_amount)
-                if self.spv.logging_level <= DEBUG:
-                    print("[WALLET] stochastic approximation failed to find a good subset (best was {}).. using a single larger input of {}!".format(best_total, spend_smallest_over_amount.amount))
+                logger.debug("[WALLET] stochastic approximation failed to find a good subset (best was {}).. using a single larger input of {}!".format(best_total, spend_smallest_over_amount.amount))
                 return [spend_smallest_over_amount]
             else:
-                if self.spv.logging_level <= DEBUG:
-                    print("[WALLET] stochastic approximation returned these coins:")
-                    for spend in best_spends:
-                        print("[WALLET]     spend = {}".format(str(spend)))
-                    print("[WALLET] total combined value = {} from {} coins".format(best_total, len(best_spends)))
+                logger.debug("[WALLET] stochastic approximation returned these coins:")
+                for spend in best_spends:
+                    logger.debug("[WALLET]     spend = {}".format(str(spend)))
+                logger.debug("[WALLET] total combined value = {} from {} coins".format(best_total, len(best_spends)))
 
                 return best_spends
 
     def approximate_best_subset(self, spends, amount, iterations):
         '''returns a list of coins that are cloest to the target amount'''
-        if self.spv.logging_level <= DEBUG:
-            print("[WALLET] approximate_best_subset: start for {} ({} iterations)".format(self.spv.coin.format_money(amount), iterations))
+        logger.debug("[WALLET] approximate_best_subset: start for {} ({} iterations)".format(self.spv.coin.format_money(amount), iterations))
 
         # initially start with all spends used
         best_spends = [True] * len(spends)
@@ -376,7 +370,7 @@ class Wallet:
                 if reached_target:
                     break
 
-                for i in range(len(spends)): 
+                for i in range(len(spends)):
                     if k == 0:
                         include_this = bool(random.getrandbits(1))
                     else:
@@ -429,7 +423,7 @@ class Spend:
 
     def __eq__(self, other):
         return self is other or (self.__class__ is other.__class__ and self.hash() == other.hash())
-        
+
     def hash(self):
         return self.coin.hash(self.serialize())
 
