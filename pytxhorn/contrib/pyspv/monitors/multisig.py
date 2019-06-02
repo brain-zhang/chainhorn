@@ -1,4 +1,6 @@
+import logging
 import struct
+
 from .. import base58
 
 from .basemonitor import BaseMonitor
@@ -9,6 +11,10 @@ from ..serialize import Serialize
 from ..transaction import TransactionInput, TransactionOutput, TransactionPrevOut
 from ..util import *
 from ..wallet import InvalidAddress, Spend
+
+
+logger = logging.getLogger('default')
+
 
 class MultisigScriptHashSpendInputCreator:
     '''Input creators need to define the following class properties:
@@ -89,7 +95,7 @@ class MultisigScriptHashSpend(Spend):
 
     def get_confirmations(self, spv):
         return spv.txdb.get_tx_depth(self.prevout.tx_hash)
-        
+
     def create_input_creators(self, spv, hash_flags):
         pksic = MultisigScriptHashSpendInputCreator(spv, self.prevout, self.script, 0xffffffff, self.address_info, hash_flags)
         return [pksic]
@@ -173,17 +179,16 @@ class MultisigScriptHashPaymentMonitor(BaseMonitor):
         # TODO on_public_key could check if any of our redemption_scripts reference that pubkey and if a private key is available for signing, etc
 
         self.script_addresses[address] = {
-            'address'          : address,
+            'address': address,
             'redemption_script': bytes_to_hexstring(redemption_script, reverse=False),
-            'nreq'             : nreq,
-            'public_keys'      : public_keys,
+            'nreq': nreq,
+            'public_keys': public_keys,
         }
 
         self.spv.wallet.add_temp('address', address, {'redemption_script': redemption_script})
 
-        if self.spv.logging_level <= DEBUG:
-            print('[MULTISIGSCRIPTHASHPAYMENTMONITOR] watching for multi-signature payment to {}'.format(address))
-            print('[MULTISIGSCRIPTHASHPAYMENTMONITOR] {} of {} public_keys: {}'.format(nreq, len(public_keys), ', '.join(bytes_to_hexstring(public_key, reverse=False) for public_key in public_keys)))
+        logger.debug('[MULTISIGSCRIPTHASHPAYMENTMONITOR] watching for multi-signature payment to {}'.format(address))
+        logger.debug('[MULTISIGSCRIPTHASHPAYMENTMONITOR] {} of {} public_keys: {}'.format(nreq, len(public_keys), ', '.join(bytes_to_hexstring(public_key, reverse=False) for public_key in public_keys)))
 
     def on_tx(self, tx):
         tx_hash = tx.hash()
@@ -200,12 +205,11 @@ class MultisigScriptHashPaymentMonitor(BaseMonitor):
                 spend.spent_in.add(tx_hash)
                 self.spv.wallet.update_spend(spend)
 
-                if self.spv.logging_level <= INFO:
-                    print('[MULTISIGSCRIPTHASHPAYMENTMONITOR] tx {} spends {} amount={}'.format(bytes_to_hexstring(tx_hash), input.prevout, self.spv.coin.format_money(spend.amount)))
+                logger.info('[MULTISIGSCRIPTHASHPAYMENTMONITOR] tx {} spends {} amount={}'.format(bytes_to_hexstring(tx_hash), input.prevout, self.spv.coin.format_money(spend.amount)))
 
                 continue
 
-            # check this input and if it's a multisig p2sh spend (OP_0 <sig> .. <sig> <redemption_script>) and check to see if 
+            # check this input and if it's a multisig p2sh spend (OP_0 <sig> .. <sig> <redemption_script>) and check to see if
             # the redemption script is in our wallet. if it is, remember this spend for later.
             if len(input.script.program) == 0 or input.script.program[0] != OP_0:
                 continue
@@ -250,8 +254,7 @@ class MultisigScriptHashPaymentMonitor(BaseMonitor):
                 unknown_redemption_script_spend_metadata = {'spent_in': [tx_hash]}
                 self.spv.wallet.add('unknown_redemption_script_spends', unknown_redemption_script_spend_key, unknown_redemption_script_spend_metadata)
 
-            if self.spv.logging_level <= DEBUG:
-                print('[MULTISIGSCRIPTHASHPAYMENTMONITOR] tx {} spends {} from our wallet but we dont know the spend yet!'.format(bytes_to_hexstring(tx_hash), input.prevout))
+            logger.debug('[MULTISIGSCRIPTHASHPAYMENTMONITOR] tx {} spends {} from our wallet but we dont know the spend yet!'.format(bytes_to_hexstring(tx_hash), input.prevout))
 
         for i, output in enumerate(tx.outputs):
             # Analyze the script for P2SH
@@ -280,13 +283,9 @@ class MultisigScriptHashPaymentMonitor(BaseMonitor):
                 # this spend is spent already
                 for tx_hash in unknown_redemption_script_spend_metadata['spent_in']:
                     spend.spent_in.add(tx_hash)
- 
+
             if not self.spv.wallet.add_spend(spend):
-                if self.spv.logging_level <= DEBUG:
-                    print('[MULTISIGSCRIPTHASHPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
+                logger.debug('[MULTISIGSCRIPTHASHPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
                 continue
 
-                   
-            if self.spv.logging_level <= INFO:
-                print('[MULTISIGSCRIPTHASHPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))
-
+            logger.info('[MULTISIGSCRIPTHASHPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))

@@ -1,3 +1,4 @@
+import logging
 import struct
 
 from .basemonitor import BaseMonitor
@@ -10,6 +11,10 @@ from ..wallet import InvalidAddress, Spend
 
 from ..script import *
 from ..util import *
+
+
+logger = logging.getLogger('default')
+
 
 class PubKeySpendInputCreator:
     '''Input creators need to define the following class properties:
@@ -69,7 +74,7 @@ class PubKeySpend(Spend):
 
     def get_confirmations(self, spv):
         return spv.txdb.get_tx_depth(self.prevout.tx_hash)
-        
+
     def create_input_creators(self, spv, hash_flags):
         pksic = PubKeySpendInputCreator(spv, self.prevout, self.script, 0xffffffff, self.address_info, hash_flags)
         return [pksic]
@@ -123,15 +128,14 @@ class PubKeyPaymentMonitor(BaseMonitor):
             address = public_key.as_address(self.spv.coin)
 
             self.pubkey_addresses[address] = {
-                'address'       : address,
+                'address': address,
                 'public_key_hex': public_key.as_hex(),
             }
 
             self.spv.wallet.add_temp('public_key', public_key, {'private_key': private_key})
             self.spv.wallet.add_temp('address', address, {'public_key': public_key})
 
-            if self.spv.logging_level <= DEBUG:
-                print('[PUBKEYPAYMENTMONITOR] watching for payments to {}'.format(address))
+            logger.debug('[PUBKEYPAYMENTMONITOR] watching for payments to {}'.format(address))
 
     def on_tx(self, tx):
         tx_hash = tx.hash()
@@ -148,12 +152,11 @@ class PubKeyPaymentMonitor(BaseMonitor):
                 spend.spent_in.add(tx_hash)
                 self.spv.wallet.update_spend(spend)
 
-                if self.spv.logging_level <= INFO:
-                    print('[PUBKEYPAYMENTMONITOR] tx {} spends {} amount={}'.format(bytes_to_hexstring(tx_hash), input.prevout, self.spv.coin.format_money(spend.amount)))
+                logger.info('[PUBKEYPAYMENTMONITOR] tx {} spends {} amount={}'.format(bytes_to_hexstring(tx_hash), input.prevout, self.spv.coin.format_money(spend.amount)))
 
                 continue
 
-            # check this input and if it's a pubkey spend (<sig> <pubkey>) check to see if 
+            # check this input and if it's a pubkey spend (<sig> <pubkey>) check to see if
             # pubkey is in our wallet. if it is, remember this spend for later.
             if len(input.script.program) < 106:
                 continue
@@ -193,8 +196,7 @@ class PubKeyPaymentMonitor(BaseMonitor):
                 unknown_pubkey_spend_metadata = {'spent_in': [tx_hash]}
                 self.spv.wallet.add('unknown_pubkey_spends', unknown_pubkey_spend_key, unknown_pubkey_spend_metadata)
 
-            if self.spv.logging_level <= DEBUG:
-                print('[PUBKEYPAYMENTMONITOR] tx {} spends {} from our wallet but we dont know the spend yet!'.format(bytes_to_hexstring(tx_hash), input.prevout))
+            logger.debug('[PUBKEYPAYMENTMONITOR] tx {} spends {} from our wallet but we dont know the spend yet!'.format(bytes_to_hexstring(tx_hash), input.prevout))
 
         for i, output in enumerate(tx.outputs):
             # Analyze the script for standard pubkey payments
@@ -234,10 +236,7 @@ class PubKeyPaymentMonitor(BaseMonitor):
 
             # Add to the wallet
             if not self.spv.wallet.add_spend(spend):
-                if self.spv.logging_level <= DEBUG:
-                    print('[PUBKEYPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
+                logger.debug('[PUBKEYPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
                 continue
 
-            if self.spv.logging_level <= INFO:
-                print('[PUBKEYPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))
-
+            logger.info('[PUBKEYPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))

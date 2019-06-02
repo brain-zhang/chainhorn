@@ -1,5 +1,5 @@
+import logging
 import hashlib
-import struct
 
 from .basemonitor import BaseMonitor
 from .pubkey import PubKeySpend
@@ -12,6 +12,10 @@ from ..wallet import InvalidAddress, Spend, DuplicateWalletItem
 
 from ..script import *
 from ..util import *
+
+
+logger = logging.getLogger('default')
+
 
 class StealthAddressSpendInputCreator:
     '''Input creators need to define the following class properties:
@@ -45,12 +49,14 @@ class StealthAddressSpendInputCreator:
         # pubkeys for stealth addresses are always compressed (+1 for size)
         return 2 + 73 + 1 + 1 + 33
 
+
 # Ths stealth spend is exactly identical to the pubkey spend with the exception
 # that it uses a different private key to sign.
 class StealthAddressSpend(PubKeySpend):
     def create_input_creators(self, spv, hash_flags):
         sasic = StealthAddressSpendInputCreator(spv, self.prevout, self.script, 0xffffffff, self.address_info, hash_flags)
         return [sasic]
+
 
 class StealthAddressPaymentMonitor(BaseMonitor):
     spend_classes = [StealthAddressSpend]
@@ -72,11 +78,10 @@ class StealthAddressPaymentMonitor(BaseMonitor):
         if metadata.get('stealth_payments', False):
             self.stealth_keys[private_key] = metadata
 
-            if self.spv.logging_level <= DEBUG:
-                print('[STEALTHADDRESSPAYMENTMONITOR] watching for stealth payments to {}'.format(private_key.get_public_key(True).as_address(self.spv.coin)))
+            logger.debug('[STEALTHADDRESSPAYMENTMONITOR] watching for stealth payments to {}'.format(private_key.get_public_key(True).as_address(self.spv.coin)))
 
     def on_tx(self, tx):
-        #return # TODO right now OpenSSL breaks on 64-bit MT
+        # return # TODO right now OpenSSL breaks on 64-bit MT
         tx_hash = tx.hash()
 
         # check inputs, they might spend coins from the wallet
@@ -94,8 +99,7 @@ class StealthAddressPaymentMonitor(BaseMonitor):
             spend.spent_in.add(tx_hash)
             self.spv.wallet.update_spend(spend)
 
-            if self.spv.logging_level <= INFO:
-                print('[STEALTHADDRESSPAYMENTMONITOR] tx {} spends {} amount={}'.format(bytes_to_hexstring(tx_hash), input.prevout, self.spv.coin.format_money(spend.amount)))
+            logger.info('[STEALTHADDRESSPAYMENTMONITOR] tx {} spends {} amount={}'.format(bytes_to_hexstring(tx_hash), input.prevout, self.spv.coin.format_money(spend.amount)))
 
         # First, build a list of OP_RETURN outputs that fit a stealth payment profile
         # And turn those parameters into a set of stealth addresses
@@ -115,7 +119,6 @@ class StealthAddressPaymentMonitor(BaseMonitor):
                         'stealth_key': stealth_key,
                         'private_key': payment_key,
                     }
-
 
         if list(stealth_payment_addresses) == 0:
             return
@@ -155,10 +158,7 @@ class StealthAddressPaymentMonitor(BaseMonitor):
 
             # Add the spend to the wallet
             if not self.spv.wallet.add_spend(spend):
-                if self.spv.logging_level <= DEBUG:
-                    print('[STEALTHADDRESSPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
+                logger.debug('[STEALTHADDRESSPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
                 continue
 
-            if self.spv.logging_level <= INFO:
-                print('[STEALTHADDRESSPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))
-
+            logger.info('[STEALTHADDRESSPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))

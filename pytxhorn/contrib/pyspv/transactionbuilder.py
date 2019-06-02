@@ -1,3 +1,4 @@
+import logging
 import random
 
 from .keys import PrivateKey
@@ -6,8 +7,13 @@ from .transaction import Transaction, TransactionOutput, UnsignedTransactionInpu
 
 from .util import *
 
+
+logger = logging.getLogger('default')
+
+
 class InsufficientInputs(Exception):
     pass
+
 
 class TransactionBuilder:
     def __init__(self, spv, lock_time=0, memo=''):
@@ -26,10 +32,10 @@ class TransactionBuilder:
 
     def process_change(self, change_class):
         self.outputs.append((True, change_class))
-        
+
     def __unsigned_inputs_from_spends(self, spends):
         inputs = []
-        included_spend_flags = { included_spend['spend_hash']: included_spend['hash_flags'] for included_spend in self.included_spends }
+        included_spend_flags = {included_spend['spend_hash']: included_spend['hash_flags'] for included_spend in self.included_spends}
         for spend in spends:
             spend_hash = spend.hash()
             hash_flags = included_spend_flags.get(spend_hash, Transaction.SIGHASH_ALL)
@@ -47,8 +53,8 @@ class TransactionBuilder:
         '''
         assert output_hash_type in (Transaction.SIGHASH_NONE, Transaction.SIGHASH_ALL)
         self.included_spends.append({
-            'spend_hash': spend_hash, 
-            'spend'     : self.spv.wallet.spends[spend_hash]['spend'],
+            'spend_hash': spend_hash,
+            'spend': self.spv.wallet.spends[spend_hash]['spend'],
             'hash_flags': output_hash_type | (Transaction.SIGHASH_ANYONECANPAY if anyone_can_pay else 0)
         })
 
@@ -81,7 +87,7 @@ class TransactionBuilder:
             change_outputs.append(change_output)
             outputs.append(change_output)
 
-        assert len(change_outputs) == 1 # right now only 1 change address supported
+        assert len(change_outputs) == 1  # right now only 1 change address supported
 
         # determine the total inputs and outputs
         included_spends = [included_spend['spend'] for included_spend in self.included_spends]
@@ -100,8 +106,7 @@ class TransactionBuilder:
                 # TODO - ask user if they want to proceed anyway
                 raise
 
-            if self.spv.logging_level <= DEBUG:
-                print("[PAYMENTBUILDER] recommended fee is {}".format(self.spv.coin.format_money(recommended_fee)))
+            logger.debug("[PAYMENTBUILDER] recommended fee is {}".format(self.spv.coin.format_money(recommended_fee)))
 
             # if selected inputs are smaller than output + new recommended fee, try selecting inputs again with new recommended fee
             if total_input < total_output + recommended_fee:
@@ -123,10 +128,10 @@ class TransactionBuilder:
                 change_outputs[0].amount = diff
                 break
 
-        # final output 
+        # final output
         total_output = sum(output.amount for output in tx.outputs)
         fee = total_output - total_input
-        assert fee < self.spv.coin.MAXIMUM_TRANSACTION_FEE # TODO - temporary safety measure?
+        assert fee < self.spv.coin.MAXIMUM_TRANSACTION_FEE  # TODO - temporary safety measure?
 
         # randomize inputs
         if shuffle_inputs:
@@ -134,10 +139,8 @@ class TransactionBuilder:
 
         # sign inputs
         for i, unsigned_tx_input in enumerate(list(tx.inputs)):
-            if self.spv.logging_level <= DEBUG:
-                print("[PAYMENTBUILDER] signing input {}".format(i))
+            logger.debug("[PAYMENTBUILDER] signing input {}".format(i))
             tx.inputs[i] = unsigned_tx_input.sign(tx, i)
 
         # return final transaction
         return tx
-

@@ -1,4 +1,5 @@
 import hashlib
+import logging
 
 from ..keys import PublicKey, PrivateKey
 from ..transaction import TransactionOutput
@@ -7,6 +8,10 @@ from ..wallet import InvalidAddress
 from ..script import *
 from ..util import *
 
+
+logger = logging.getLogger('default')
+
+
 class StealthAddressPayment:
     def __init__(self, address, amount):
         assert isinstance(amount, int), "amount must be in satoshis"
@@ -14,7 +19,7 @@ class StealthAddressPayment:
 
         self.address = address
         self.amount = amount
-        
+
     def create_outputs(self, spv):
         address_bytes = int.to_bytes(base58.decode(self.address), spv.coin.STEALTH_ADDRESS_BYTE_LENGTH, 'big')
         k = len(spv.coin.STEALTH_ADDRESS_VERSION_BYTES)
@@ -31,17 +36,15 @@ class StealthAddressPayment:
 
         public_key = PublicKey(address_bytes[len(spv.coin.STEALTH_ADDRESS_VERSION_BYTES):][:33])
 
-        if spv.logging_level <= DEBUG:
-            print("[STEALTHADDRESSPAYMENT] Input Payment Address =", public_key.as_address(spv.coin))
+        logger.debug("[STEALTHADDRESSPAYMENT] Input Payment Address =", public_key.as_address(spv.coin))
 
         # Create the ephemeral key used to create the shared secret
         ekey = PrivateKey.create_new()
         epubkey = ekey.get_public_key(True)
         shared_secret_pubkey = public_key.multiply(ekey.as_int())
 
-        if spv.logging_level <= DEBUG:
-            print("[STEALTHADDRESSPAYMENT] Shared secret =", bytes_to_hexstring(epubkey.pubkey, reverse=False))
- 
+        logger.debug("[STEALTHADDRESSPAYMENT] Shared secret =", bytes_to_hexstring(epubkey.pubkey, reverse=False))
+
         # Yield the shared secret output
         script = Script()
         script.push_op(OP_RETURN)
@@ -55,9 +58,8 @@ class StealthAddressPayment:
 
         # We need to add shared_secret to Bob's public key
         new_public_key = public_key.add_constant(int.from_bytes(shared_secret, 'big'))
-        if spv.logging_level <= DEBUG:
-            print("[STEALTHADDRESSPAYMENT] New Payment Address =", new_public_key.as_address(spv.coin))
-  
+        logger.debug("[STEALTHADDRESSPAYMENT] New Payment Address =", new_public_key.as_address(spv.coin))
+
         script = Script()
         script.push_op(OP_DUP)
         script.push_op(OP_HASH160)
@@ -65,4 +67,3 @@ class StealthAddressPayment:
         script.push_op(OP_EQUALVERIFY)
         script.push_op(OP_CHECKSIG)
         yield TransactionOutput(amount=self.amount, script=script)
-

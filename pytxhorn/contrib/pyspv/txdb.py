@@ -1,4 +1,4 @@
-import os
+import logging
 import shelve
 import threading
 
@@ -6,6 +6,10 @@ from contextlib import closing
 
 from .transaction import Transaction
 from .util import *
+
+
+logger = logging.getLogger('default')
+
 
 class TransactionDatabase:
     '''
@@ -102,20 +106,18 @@ class TransactionDatabase:
                     self.watched_block_height[block_hash] = 0
                     txdb['watched_block_height'] = self.watched_block_height
 
-                if self.spv.logging_level <= DEBUG:
-                    print('[TXDB] bound tx {} to block {}'.format(tx_hash_str[3:], bytes_to_hexstring(block_hash)))
+                logger.debug('[TXDB] bound tx {} to block {}'.format(tx_hash_str[3:], bytes_to_hexstring(block_hash)))
 
     def get_tx_depth(self, tx_hash):
         with self.db_lock:
             if tx_hash not in self.transaction_cache:
-                if self.spv.logging_level <= WARNING:
-                    print("[TXDB] get_tx_depth called on tx {} but we don't know about it".format(bytes_to_hexstring(tx_hash)))
+                logger.warning("[TXDB] get_tx_depth called on tx {} but we don't know about it".format(bytes_to_hexstring(tx_hash)))
                 return 0
             for block_hash in self.transaction_cache[tx_hash]['in_blocks']:
                 h = self.watched_block_height[block_hash]
                 if h != 0:
                     return self.blockchain_height - h + 1
-            return 0 
+            return 0
 
     def is_conflicted(self, tx_hash):
         with self.db_lock:
@@ -149,13 +151,12 @@ class TransactionDatabase:
                 self.watched_block_height[block_hash] = self.blockchain_height
                 with closing(shelve.open(self.transaction_database_file)) as txdb:
                     txdb['watched_block_height'] = self.watched_block_height
-                if self.spv.logging_level <= DEBUG:
-                    print('[TXDB] block {} tracked starting at height={}'.format(bytes_to_hexstring(block_hash), self.blockchain_height))
+                logger.info('[TXDB] block {} tracked starting at height={}'.format(bytes_to_hexstring(block_hash), self.blockchain_height))
 
     def on_tx(self, tx):
         # Don't care.
         pass
-    
+
     def on_block(self, block):
         with self.db_lock:
             tx_hashes = [ tx.hash() for tx in block.transactions ]
