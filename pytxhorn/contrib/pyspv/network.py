@@ -755,7 +755,9 @@ class Peer(threading.Thread):
         r = self.manager.will_request_headers(self)
         if r == Manager.REQUEST_GO:
             self.headers_request = time.time()
-            self.send_getheaders(self.manager.spv.blockchain.get_best_chain_locator())
+            best_chain_locator = self.manager.spv.blockchain.get_best_chain_locator()
+            logger.info("[peer] {}, header request for blockchain sync, best chain locator:{}".format(self.peer_address, best_chain_locator))
+            self.send_getheaders(best_chain_locator)
             return
         elif r == Manager.REQUEST_WAIT:
             # Manager wants to give another peer the chance to deliver headers
@@ -1073,7 +1075,7 @@ class Peer(threading.Thread):
                 self.state = 'dead'
                 return
 
-        logger.warning("[PEER] {} got {} headers".format(self.peer_address, len(headers)))
+        logger.info("[PEER] {} got {} headers".format(self.peer_address, len(headers)))
 
         if not self.manager.received_headers(headers):
             if len(headers) != 0:
@@ -1118,7 +1120,7 @@ class Peer(threading.Thread):
         logger.info('[PEER] {} requested {} items'.format(self.peer_address, count))
 
     def cmd_getblocks(self, payload):
-        logger.debug('[PEER] {} ignoring getblocks command'.format(self.peer_address))
+        logger.info('[PEER] {} ignoring getblocks command'.format(self.peer_address))
 
     def cmd_getaddr(self, payload):
         # Select random addresses and send them
