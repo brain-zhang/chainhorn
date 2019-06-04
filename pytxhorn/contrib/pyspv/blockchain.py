@@ -70,7 +70,7 @@ class Blockchain:
                 for i in range(db['blockchain']['count']):
                     index = (start + i) % self.saved_blockchain_length
                     link = links[index]
-                    logger.debug('connecting {}/{}, {}'.format(i, db['blockchain']['count'], bytes_to_hexstring(link['hash'])))
+                    logger.info('connecting {}/{}, {}'.format(i, db['blockchain']['count'], bytes_to_hexstring(link['hash'])))
 
                     header, _ = BlockHeader.unserialize(link['header'], self.spv.coin)
                     block_link = self.create_block_link(header.hash(), height=link['height'], work=link['work'], header=header)

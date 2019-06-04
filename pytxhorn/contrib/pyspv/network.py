@@ -914,7 +914,7 @@ class Peer(threading.Thread):
         data.append(Serialize.serialize_variable_int(len(invs)))
         for inv in invs:
             data.append(inv.serialize())
-            logger.info("send inventory:{}, peer:{}".format(str(inv), self.peer_address))
+            logger.debug("send inventory:{}, peer:{}".format(str(inv), self.peer_address))
 
         payload = b''.join(data)
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "inv", payload))
@@ -934,22 +934,22 @@ class Peer(threading.Thread):
         payload = struct.pack("<L", Manager.PROTOCOL_VERSION) + block_locator.serialize() + last_block
 
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "getheaders", payload))
-        logger.debug("[PEER] {} sent getheaders (block_locator top={})".format(self.peer_address, bytes_to_hexstring(block_locator.hashes[0])))
+        logger.info("[PEER] {} sent getheaders (block_locator top={})".format(self.peer_address, bytes_to_hexstring(block_locator.hashes[0])))
 
     def send_getblocks(self, block_locator):
         last_block = (b'\x00' * 32)
         payload = struct.pack("<L", Manager.PROTOCOL_VERSION) + block_locator.serialize() + last_block
 
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "getblocks", payload))
-        logger.debug("[PEER] {} sent getblocks".format(self.peer_address))
+        logger.info("[PEER] {} sent getblocks".format(self.peer_address))
 
     def send_tx(self, inv, tx_data):
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "tx", tx_data))
-        logger.debug("[PEER] {} sent tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
+        logger.info("[PEER] {} sent tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
 
     def send_block(self, inv, block_data):
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "block", block_data))
-        logger.debug("[PEER] {} sent block {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
+        logger.info("[PEER] {} sent block {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
 
     def send_addr(self, addresses):
         data = []
@@ -1031,7 +1031,7 @@ class Peer(threading.Thread):
         for i in range(count):
             inv, payload = Inv.unserialize(payload)
 
-            logger.info('[PEER] {} got {}'.format(self.peer_address, str(inv)))
+            logger.debug('[PEER] {} got {}'.format(self.peer_address, str(inv)))
 
             if inv.type == Inv.MSG_BLOCK:
                 # Doesn't matter if this was a getblocks request or
@@ -1047,7 +1047,7 @@ class Peer(threading.Thread):
         tx_hash = tx.hash()
         inv = Inv(Inv.MSG_TX, tx_hash)
 
-        logger.info("[PEER] {} got tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
+        logger.debug("[PEER] {} got tx {}".format(self.peer_address, bytes_to_hexstring(inv.hash)))
 
         if inv in self.inprogress_invs:
             self.manager.received_transaction(inv, tx)
