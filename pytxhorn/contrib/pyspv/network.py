@@ -139,7 +139,7 @@ class Manager(threading.Thread):
     def run(self):
         self.running = True
 
-        logger.debug("[NETWORK] starting")
+        logger.info("[NETWORK] starting")
 
         self.start_listening()
 
@@ -165,7 +165,7 @@ class Manager(threading.Thread):
 
             time.sleep(0.01)
 
-        logger.debug("[NETWORK] stopping")
+        logger.info("[NETWORK] stopping")
 
         if self.listen_socket is not None:
             self.listen_socket.close()
@@ -570,7 +570,7 @@ class Peer(threading.Thread):
     def run(self):
         self.state = 'init'
         self.running = True
-        logger.debug("[PEER] {} Peer starting...".format(self.peer_address))
+        logger.info("[PEER] {} Peer starting...".format(self.peer_address))
         while self.running:
             try:
                 self.step()
@@ -749,6 +749,7 @@ class Peer(threading.Thread):
             return
 
         # Requesting from peer wouldn't work, says the peer!
+        logger.debug("best chain height:{},peer last block:{}".format(self.manager.spv.blockchain.get_best_chain_height(), self.peer_last_block))
         if self.manager.spv.blockchain.get_best_chain_height() >= self.peer_last_block:
             return
 
@@ -756,7 +757,7 @@ class Peer(threading.Thread):
         if r == Manager.REQUEST_GO:
             self.headers_request = time.time()
             best_chain_locator = self.manager.spv.blockchain.get_best_chain_locator()
-            logger.info("[peer] {}, header request for blockchain sync, best chain locator:{}".format(self.peer_address, best_chain_locator))
+            logger.debug("[peer] {}, header request for blockchain sync, best chain locator:{}".format(self.peer_address, best_chain_locator))
             self.send_getheaders(best_chain_locator)
             return
         elif r == Manager.REQUEST_WAIT:
@@ -889,6 +890,7 @@ class Peer(threading.Thread):
         self.last_inventory_check_time = now
 
     def send_version(self):
+        logger.info("[PEER] send version to {}".format(self.peer_address))
         assert not self.sent_version, "don't call this twice"
         version  = Manager.PROTOCOL_VERSION
         services = Manager.SERVICES
@@ -976,12 +978,21 @@ class Peer(threading.Thread):
             _, _, payload = Serialize.unserialize_network_address(payload, with_timestamp=False)
             nonce = struct.unpack("<Q", payload[:8])[0]
             self.peer_user_agent, payload = Serialize.unserialize_string(payload[8:])
-            self.peer_last_block = struct.unpack("<L", payload)[0]
+            if len(payload) == 4:
+                self.peer_last_block = struct.unpack("<L", payload)[0]
+            elif len(payload) == 5:
+                # https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki
+                self.peer_last_block = struct.unpack("<L", payload[:-1])[0]
+            else:
+                raise ValueError("No support version payload:{}".format(str(payload)))
+
         except struct.error:
             # Not enough data usually
+            import traceback
+            logger.warning(traceback.format_exc())
             self.state = 'dead'
             self.manager.peer_is_bad(self.peer_address)
-            logger.debug("[PEER] {} bad version {}".format(self.peer_address, self.peer_version))
+            logger.warning("[PEER] {} bad version {}".format(self.peer_address, self.peer_version))
             return
 
         logger.info("[PEER] {} version {} (User-agent {}, last block {})".format(self.peer_address, self.peer_version, self.peer_user_agent, self.peer_last_block))
