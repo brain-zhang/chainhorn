@@ -21,7 +21,7 @@ class Blockchain:
         # assert (spv.coin.CHECKPOINT_BLOCK_HEIGHT % spv.coin.WORK_INTERVAL) == 0
 
         self.spv = spv
-        # self.SAVED_BLOCKCHAIN_LENGTH = spv.coin.WORK_INTERVAL * 28 * 1024  # save for future 1024 years
+        # self.SAVED_BLOCKCHAIN_LENGTH = spv.coin.WORK_INTERVAL * 2 * 56 * 100 # save for future 100 years
         self.saved_blockchain_length = max(self.SAVED_BLOCKCHAIN_LENGTH, self.spv.coin.WORK_INTERVAL)  # Save at least WORK_INTERVAL blocks
 
         self.blockchain_db_file = spv.config.get_file("blockchain")
