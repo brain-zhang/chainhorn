@@ -66,7 +66,7 @@ class Blockchain:
                 links = db['blockchain']['links']
 
                 start_time = time.time()
-                logger.info('[BLOCKCHAIN] loading blockchain headers...')
+                logger.info("[BLOCKCHAIN] loading blockchain headers..., start:{}, count:{}".format(db['blockchain']['start'], db['blockchain']['count']))
 
                 for i in range(db['blockchain']['count']):
                     index = (start + i) % self.saved_blockchain_length

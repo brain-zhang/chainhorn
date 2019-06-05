@@ -63,10 +63,17 @@ class Bitcoin:
     GENESIS_BLOCK_BITS      = 0x1D00FFFF
 
     # Checkpoint block height MUST be a multiple of the work interval in order to verify difficulty changes
-    CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("0000000000000003cbb18a8ea04e14452ad0c3bc92ed709e4df5a50b2a24da0e")
-    CHECKPOINT_BLOCK_HEIGHT    = 274176
-    CHECKPOINT_BLOCK_TIMESTAMP = 1386684686
-    CHECKPOINT_BLOCK_BITS      = 0x1904BA6E
+    # CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("0000000000000003cbb18a8ea04e14452ad0c3bc92ed709e4df5a50b2a24da0e")
+    # CHECKPOINT_BLOCK_HEIGHT    = 274176
+    # CHECKPOINT_BLOCK_TIMESTAMP = 1386684686
+    # CHECKPOINT_BLOCK_BITS      = 0x1904BA6E
+
+    # update new checkpoint for sync bitcoin v0.18
+    # https://github.com/bitcoin/bitcoin/blob/0.18/src/chainparams.cpp
+    CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")
+    CHECKPOINT_BLOCK_HEIGHT    = 295000
+    CHECKPOINT_BLOCK_TIMESTAMP = 1397080064
+    CHECKPOINT_BLOCK_BITS      = 0x6F5D0F55
 
     @staticmethod
     def hash(data):
