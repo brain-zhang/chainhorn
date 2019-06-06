@@ -18,7 +18,7 @@ class Blockchain:
     SAVED_BLOCKCHAIN_LENGTH = 100
 
     def __init__(self, spv):
-        # assert (spv.coin.CHECKPOINT_BLOCK_HEIGHT % spv.coin.WORK_INTERVAL) == 0
+        assert (spv.coin.CHECKPOINT_BLOCK_HEIGHT % spv.coin.WORK_INTERVAL) == 0
 
         self.spv = spv
         # self.SAVED_BLOCKCHAIN_LENGTH = spv.coin.WORK_INTERVAL * 2 * 56 * 100 # save for future 100 years

@@ -70,10 +70,16 @@ class Bitcoin:
 
     # update new checkpoint for sync bitcoin v0.18
     # https://github.com/bitcoin/bitcoin/blob/0.18/src/chainparams.cpp
-    CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")
-    CHECKPOINT_BLOCK_HEIGHT    = 295000
-    CHECKPOINT_BLOCK_TIMESTAMP = 1397080064
-    CHECKPOINT_BLOCK_BITS      = 0x6F5D0F55
+    # CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")
+    # CHECKPOINT_BLOCK_HEIGHT    = 295000
+    # CHECKPOINT_BLOCK_TIMESTAMP = 1397080064
+    # CHECKPOINT_BLOCK_BITS      = 0x6F5D0F55
+
+    # for 2019-01-14 10:19:54 block; recent update
+    CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("00000000000000000021ac236d0b29b4467f99c2c8783032451ba7b735045e3c")
+    CHECKPOINT_BLOCK_HEIGHT    = 558432
+    CHECKPOINT_BLOCK_TIMESTAMP = 1547432394
+    CHECKPOINT_BLOCK_BITS      = 0x172FD633
 
     @staticmethod
     def hash(data):
