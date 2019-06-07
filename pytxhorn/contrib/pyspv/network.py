@@ -749,15 +749,15 @@ class Peer(threading.Thread):
             return
 
         # Requesting from peer wouldn't work, says the peer!
-        logger.debug("best chain height:{},peer last block:{}".format(self.manager.spv.blockchain.get_best_chain_height(), self.peer_last_block))
         if self.manager.spv.blockchain.get_best_chain_height() >= self.peer_last_block:
             return
 
         r = self.manager.will_request_headers(self)
+        logger.debug("[peer] {}, header request for blockchain sync, request_type:{}, best chain height:{}, peer last block:{}".format(
+            self.peer_address, r, self.manager.spv.blockchain.get_best_chain_height(), self.peer_last_block))
         if r == Manager.REQUEST_GO:
             self.headers_request = time.time()
             best_chain_locator = self.manager.spv.blockchain.get_best_chain_locator()
-            logger.debug("[peer] {}, header request for blockchain sync, best chain height:{}".format(self.peer_address, self.manager.spv.blockchain.get_best_chain_height()))
             self.send_getheaders(best_chain_locator)
             return
         elif r == Manager.REQUEST_WAIT:
