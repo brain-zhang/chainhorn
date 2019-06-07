@@ -56,7 +56,8 @@ class Blockchain:
                     db['blockchain'] = {
                         'start': 0,
                         'count': 0,
-                        'links': [None] * self.saved_blockchain_length,
+                        # 'links': [None] * self.saved_blockchain_length,
+                        'links': collections.OrderedDict(),
                     }
 
                 self.needs_headers = db['needs_headers']
