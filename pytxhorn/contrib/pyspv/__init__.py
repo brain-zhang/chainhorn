@@ -51,9 +51,11 @@ class pyspv:
     :type tor: boolean
     :param sync_block_start: specify the block number to start syncing at
     :type sync_block_start: integer or None
+    :param app_datapath: specify the data store dir path, default: ~/.pytxporn
+    :type app_datapath: string datapath, exp: '/var/pytxhorn/data'
     '''
 
-    def __init__(self, app_name, testnet=False, peer_goal=8, broadcast_peer_goal=8, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None):
+    def __init__(self, app_name, testnet=False, peer_goal=8, broadcast_peer_goal=8, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None, app_datapath=None):
         self.app_name = app_name
         self.time_offset = 0
         self.time_samples = []

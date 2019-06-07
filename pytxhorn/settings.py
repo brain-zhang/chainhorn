@@ -42,6 +42,3 @@ try:
     from local_settings import *
 except ImportError:
     pass
-
-if TESTNET:
-    APPNAME = APPNAME + '_test'

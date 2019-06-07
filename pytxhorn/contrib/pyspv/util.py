@@ -11,16 +11,15 @@ CRITICAL = 4
 
 class Config:
     '''Config is reponsible for locating a consistent location for configuration files, and separating coins and their testnet data'''
-    def __init__(self, name, coin, testnet):
+    def __init__(self, name, coin, testnet, app_datapath=None):
         if os.name != 'nt':
             name = '.' + name
 
-        e = os.getenv("APPDATA")
-        if e is not None:
-            self.path = os.sep.join([e, name])
+        if app_datapath is not None:
+            self.path = os.sep.join([app_datapath, name])
         else:
             self.path = os.sep.join([os.path.expanduser("~"), name])
-        
+
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
@@ -66,7 +65,7 @@ def base58_check(coin, src, version_bytes=0, suffix_bytes=b''):
     r = coin.hash(src)
     checksum = r[:4]
     s = src + checksum
-    
+
     e = base58.encode(int.from_bytes(s, 'big'))
     if version_bytes == bytes([0]):
         lz = 0
