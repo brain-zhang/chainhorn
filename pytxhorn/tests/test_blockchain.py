@@ -22,7 +22,7 @@ class BlockChainTestCase(TestCase):
                     app_datapath=self.fixture_path,
                 )
         self.blockchain = spv.blockchain
-        self.assertEqual(self.blockchain.get_best_chain_height(), 12000)
+        self.assertEqual(self.blockchain.get_best_chain_height(), 2000)
 
     def tearDown(self):
         super(TestCase, self).tearDown()
