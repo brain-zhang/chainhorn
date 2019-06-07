@@ -16,12 +16,18 @@ RUN_ROOT = os.path.join(RUNTIME_ROOT, 'var', 'run')
 IPC_ENDPOINT_ROOT = os.path.join(RUN_ROOT, 'ipc')
 
 sys.path.append(PROJECT_ROOT)
+LOGGING_LEVEL = 'INFO'
 
+# pytxhorn node config
 APPNAME = 'pytxhorn'
 
 BITCOIN_NETWORK_PEER_GOAL = 100
+
 # BITCOIN_NETWORK_BROADCAST_PEER_GOAL must <= BITCOIN_NETWORK_PEER_GOAL
 BITCOIN_NETWORK_BROADCAST_PEER_GOAL = 100
+
+SYNC_BLOCK_START = 0
+
 TESTNET = False
 
 HOST_IP = '0.0.0.0'
@@ -29,9 +35,6 @@ HOST_PORT = 8033
 
 WEB_HOST_IP = '0.0.0.0'
 WEB_HOST_PORT = 5000
-
-
-LOGGING_LEVEL = 'INFO'
 
 
 # add your settings before these code if you want to make it in local_settings.py

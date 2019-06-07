@@ -757,7 +757,7 @@ class Peer(threading.Thread):
         if r == Manager.REQUEST_GO:
             self.headers_request = time.time()
             best_chain_locator = self.manager.spv.blockchain.get_best_chain_locator()
-            logger.debug("[peer] {}, header request for blockchain sync, best chain locator:{}".format(self.peer_address, best_chain_locator))
+            logger.debug("[peer] {}, header request for blockchain sync, best chain height:{}".format(self.peer_address, self.manager.spv.blockchain.get_best_chain_height()))
             self.send_getheaders(best_chain_locator)
             return
         elif r == Manager.REQUEST_WAIT:
@@ -1044,7 +1044,7 @@ class Peer(threading.Thread):
         for i in range(count):
             inv, payload = Inv.unserialize(payload)
 
-            logger.debug('[PEER] {} got {}'.format(self.peer_address, str(inv)))
+            # logger.debug('[PEER] {} got {}'.format(self.peer_address, str(inv)))
 
             if inv.type == Inv.MSG_BLOCK:
                 # Doesn't matter if this was a getblocks request or

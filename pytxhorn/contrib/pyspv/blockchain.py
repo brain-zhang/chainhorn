@@ -21,7 +21,7 @@ class Blockchain:
         assert (spv.coin.CHECKPOINT_BLOCK_HEIGHT % spv.coin.WORK_INTERVAL) == 0
 
         self.spv = spv
-        # self.SAVED_BLOCKCHAIN_LENGTH = spv.coin.WORK_INTERVAL * 2 * 56 * 100 # save for future 100 years
+        self.SAVED_BLOCKCHAIN_LENGTH = spv.coin.WORK_INTERVAL * 2 * 56 * 100 # save for future 100 years
         self.saved_blockchain_length = max(self.SAVED_BLOCKCHAIN_LENGTH, self.spv.coin.WORK_INTERVAL)  # Save at least WORK_INTERVAL blocks
 
         self.blockchain_db_file = spv.config.get_file("blockchain")
@@ -166,8 +166,10 @@ class Blockchain:
                     changes = changes + self.__connect_block_link(blockchain, new_block_link)
                     assert self.best_chain is new_block_link
 
-                    if (self.best_chain['header'].timestamp >= self.spv.wallet.creation_time - (24 * 60 * 60)) or (self.sync_block_start is not None and self.best_chain['height'] >= self.sync_block_start):
-                        logger.info('headers sync done, switching to full blocks')
+                    # if (self.best_chain['header'].timestamp >= self.spv.wallet.creation_time - (24 * 60 * 60))or (self.sync_block_start is not None and self.best_chain['height'] >= self.sync_block_start):
+                    if (self.best_chain['header'].timestamp - time.time() >= 24 * 60 * 60):
+                        logger.info("headers sync done, switching to full blocks, header timestamp:{}, wallet_creation time:{}, sync_block_start:{}, best chain height:{}".format(
+                            self.best_chain['header'].timestamp, self.spv.wallet.creation_time, self.sync_block_start, self.best_chain['height']))
                         self.needs_headers = db['needs_headers'] = False
                         break
 
