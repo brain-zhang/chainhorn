@@ -6,7 +6,7 @@ import sys
 import threading
 
 from contrib.pyspv import pyspv
-from contrib.pyspv.util import DEBUG, INFO, WARNING, hexstring_to_bytes
+from contrib.pyspv.util import hexstring_to_bytes
 from contrib.pyspv.bitcoin import Bitcoin
 from contrib.pyspv.transaction import Transaction
 from contrib.logging import init_logging
