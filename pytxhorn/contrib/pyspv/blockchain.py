@@ -72,7 +72,8 @@ class Blockchain:
                 for i in range(db['blockchain']['count']):
                     index = (start + i) % self.saved_blockchain_length
                     link = links[index]
-                    logger.info('connecting {}/{}, {}'.format(i, db['blockchain']['count'], bytes_to_hexstring(link['hash'])))
+                    if i >= 10000 and i % 10000 == 0:
+                        logger.info('connecting {}/{}, {}'.format(i, db['blockchain']['count'], bytes_to_hexstring(link['hash'])))
 
                     header, _ = BlockHeader.unserialize(link['header'], self.spv.coin)
                     block_link = self.create_block_link(header.hash(), height=link['height'], work=link['work'], header=header)
@@ -93,6 +94,7 @@ class Blockchain:
                             raise Exception("Uh oh. Blockchain state is corrupted. Loaded {} blocks to height {}.".format(i, self.best_chain['height']))
 
                 logger.info('[BLOCKCHAIN] done ({:5.3f} sec)'.format(time.time() - start_time))
+
 
     def create_block_link(self, hash, height=0, main=False, connected=False, prev=None, header=None, work=None):
         if work is None and header is not None:
@@ -491,6 +493,9 @@ class BlockLocator:
 
     def serialize(self):
         return Serialize.serialize_variable_int(len(self.hashes)) + b''.join(self.hashes)
+
+    def get_hashes(self):
+        return ['{}'.format(bytes_to_hexstring(block_hash)) for block_hash in self.hashes][::-1]
 
     def __str__(self):
         return '<block_locator\n\t' + '\n\t'.join(['{}'.format(bytes_to_hexstring(block_hash)) for block_hash in self.hashes][::-1]) + '>'
