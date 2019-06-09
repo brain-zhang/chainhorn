@@ -434,13 +434,11 @@ class Manager(threading.Thread):
                 self.inprogress_invs.pop(inv)
 
     def received_headers(self, headers):
-        result = False
         try:
-            result = self.spv.blockchain.add_block_headers(headers)
+            return self.spv.blockchain.add_block_headers(headers)
         finally:
             with self.blockchain_sync_lock:
                 self.headers_request = None
-        return result
 
     def received_block(self, inv, block, syncing_blockchain):
         if not syncing_blockchain:
