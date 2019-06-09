@@ -1,15 +1,19 @@
+# -*- coding: utf-8 -*-
+
 import struct
 
 from .script import Script
 from .serialize import Serialize
-from .util import *
+from .util import bytes_to_hexstring, hexstring_to_bytes
+
 
 class TransactionTooExpensive(Exception):
     def __init__(self, fee, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
         self.fee = fee
 
-class TransactionOutput:
+
+class TransactionOutput(object):
     def __init__(self, amount=0, script=Script()):
         assert amount >= 0
         self.amount = amount
@@ -43,7 +47,7 @@ class TransactionOutput:
     def unserialize(data):
         amount = struct.unpack("<Q", data[:8])[0]
         script_size, data = Serialize.unserialize_variable_int(data[8:])
-        script = data[:script_size] #Script.unserialize(data, script_size)
+        script = data[:script_size]  # Script.unserialize(data, script_size)
 
         tx_output = TransactionOutput(amount=amount, script=Script(script))
         return tx_output, data[script_size:]
@@ -51,7 +55,8 @@ class TransactionOutput:
     def __str__(self):
         return '<tx_output amount={} script={} bytes>'.format(self.amount, len(self.script.program))
 
-class TransactionPrevOut:
+
+class TransactionPrevOut(object):
     def __init__(self, tx_hash=None, n=0):
         self.tx_hash = tx_hash
         self.n = n
@@ -77,7 +82,8 @@ class TransactionPrevOut:
     def __str__(self):
         return '<TransactionPrevOut {}:{}>'.format(bytes_to_hexstring(self.tx_hash), self.n)
 
-class TransactionInput:
+
+class TransactionInput(object):
     def __init__(self, prevout=TransactionPrevOut(), script=Script(), sequence=0xffffffff):
         self.prevout = prevout
         self.script = script
@@ -133,16 +139,17 @@ class TransactionInput:
         prevout, data = TransactionPrevOut.unserialize(data)
 
         script_size, data = Serialize.unserialize_variable_int(data)
-        script = data[:script_size] #Script.unserialize(data, script_size, as_coinbase=as_coinbase)
-        sequence = struct.unpack("<L", data[script_size:script_size+4])[0]
+        script = data[:script_size]  # Script.unserialize(data, script_size, as_coinbase=as_coinbase)
+        sequence = struct.unpack("<L", data[script_size:script_size + 4])[0]
 
         tx_input = TransactionInput(prevout=prevout, script=Script(script), sequence=sequence)
-        return tx_input, data[script_size+4:]
+        return tx_input, data[script_size + 4:]
 
     def __str__(self):
         return '<tx_input {}:{} sequence={:04x} script={} bytes>'.format(bytes_to_hexstring(self.prevout.tx_hash), self.prevout.n, self.sequence, len(self.script.program))
 
-class UnsignedTransactionInput:
+
+class UnsignedTransactionInput(object):
     def __init__(self, input_creator):
         self.input_creator = input_creator
 
@@ -182,7 +189,8 @@ class UnsignedTransactionInput:
         data_size += 4
         return data_size
 
-class Transaction:
+
+class Transaction(object):
     SIGHASH_ALL = 1
     SIGHASH_NONE = 2
     SIGHASH_SINGLE = 3
@@ -301,7 +309,7 @@ class Transaction:
 
         data_size += 4
         return data_size
- 
+
     @staticmethod
     def unserialize(data, coin):
         version = struct.unpack('<L', data[:4])[0]
@@ -322,13 +330,14 @@ class Transaction:
 
         tx = Transaction(coin, version=version, inputs=inputs, outputs=outputs, lock_time=lock_time)
         return tx, data[4:]
- 
+
     def __str__(self):
-        s = '<tx {}\n\t{}\n\t{}\n\tlock_time={}>'.format(bytes_to_hexstring(self.hash()), 
-                '\n\t'.join('input: {}'.format(str(i)) for i in self.inputs),
-                '\n\t'.join('output: {}'.format(str(o)) for o in self.outputs),
-                self.lock_time)
+        s = '<tx {}\n\t{}\n\t{}\n\tlock_time={}>'.format(bytes_to_hexstring(self.hash()),
+                                                         '\n\t'.join('input: {}'.format(str(i)) for i in self.inputs),
+                                                         '\n\t'.join('output: {}'.format(str(o)) for o in self.outputs),
+                                                         self.lock_time)
         return s
+
 
 def test():
     from .bitcoin import Bitcoin
@@ -337,4 +346,4 @@ def test():
     assert len(r) == 0
     print(str(tx))
 
-#test()
+# test()

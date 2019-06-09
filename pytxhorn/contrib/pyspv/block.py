@@ -1,13 +1,17 @@
+# -*- coding: utf-8 -*-
+
 import struct
 
 from .serialize import Serialize
-from .util import *
 from .transaction import Transaction
+from .util import bits_to_target, bytes_to_hexstring, target_to_bits
+
 
 class BadSerializedBlock(Exception):
     pass
 
-class BlockHeader:
+
+class BlockHeader(object):
     CURRENT_VERSION = 1
 
     def __init__(self, coin, version=CURRENT_VERSION, prev_block_hash=(b'\x00' * 32), merkle_root_hash=(b'\x00' * 32), timestamp=0, bits=0, nonce=0):
@@ -36,7 +40,7 @@ class BlockHeader:
 
     def serialize(self):
         version = struct.pack("<L", self.version)
-        extra   = struct.pack("<LLL", self.timestamp, self.bits, self.nonce)
+        extra = struct.pack("<LLL", self.timestamp, self.bits, self.nonce)
         return version + self.prev_block_hash + self.merkle_root_hash + extra
 
     def serialize_size(self):
@@ -53,11 +57,12 @@ class BlockHeader:
         return header, data[80:]
 
     def __str__(self):
-        return '<blockheader {}\n\tversion={}\n\tprev_block_hash={}\n\tmerkle_root_hash={}\n\ttimestamp={}\n\tbits={:08x}\n\tnonce={}\n\ttarget={:064x}\n\tvalid={}>'.format \
-            (bytes_to_hexstring(self.hash()), self.version, bytes_to_hexstring(self.prev_block_hash), bytes_to_hexstring(self.merkle_root_hash),
-             self.timestamp, self.bits, self.nonce, bits_to_target(self.bits), self.check())
+        return '<blockheader {}\n\tversion={}\n\tprev_block_hash={}\n\tmerkle_root_hash={}\n\ttimestamp={}\n\tbits={:08x}\n\tnonce={}\n\ttarget={:064x}\n\tvalid={}>'.format(
+            bytes_to_hexstring(self.hash()), self.version, bytes_to_hexstring(self.prev_block_hash), bytes_to_hexstring(self.merkle_root_hash),
+            self.timestamp, self.bits, self.nonce, bits_to_target(self.bits), self.check())
 
-class Block:
+
+class Block(object):
     BLOCK_DIFFICULTY_LIMIT = ((1 << 256) - 1) >> 32
     assert target_to_bits(BLOCK_DIFFICULTY_LIMIT) == 0x1d00ffff
 
@@ -94,7 +99,7 @@ class Block:
                 hashes.append(hashes[-1])
             new_hashes = []
             for i in range(0, len(hashes), 2):
-                k = hashes[i] + hashes[i+1]
+                k = hashes[i] + hashes[i + 1]
                 new_hashes.append(self.coin.hash(k))
             hashes = new_hashes
 
@@ -109,7 +114,7 @@ class Block:
         for i in range(num_transactions):
             try:
                 tx, data = Transaction.unserialize(data, coin)
-            except:
+            except Exception:
                 raise BadSerializedBlock("block {} couldn't unserialize because transaction {} failed to unserialize".format(bytes_to_hexstring(header.hash()), i))
             transactions.append(tx)
 
@@ -138,5 +143,3 @@ class Block:
 
     def __str__(self):
         return '<block {} ntx={}>'.format(bytes_to_hexstring(self.header.hash()), len(self.transactions))
-
-

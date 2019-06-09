@@ -1,21 +1,28 @@
+# -*- coding: utf-8 -*-
+
 import struct
 import time
 
 from .bitcoin import Bitcoin
 
+
 class SerializeDataTooShort(Exception):
     pass
+
 
 class InvalidNetworkMagic(Exception):
     pass
 
+
 class InvalidCommandEncoding(Exception):
     pass
+
 
 class MessageChecksumFailure(Exception):
     pass
 
-class Serialize:
+
+class Serialize(object):
     @staticmethod
     def serialize_variable_int(i):
         if i < 0xfd:
@@ -142,12 +149,12 @@ class Serialize:
     @staticmethod
     def serialize_network_address(address, services, with_timestamp=True):
         if address is not None:
-            quads   = address[0].split(".")
+            quads = address[0].split(".")
             address = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, int(quads[0]), int(quads[1]), int(quads[2]), int(quads[3])])
-            port    = struct.pack(">H", address[1])
+            port = struct.pack(">H", address[1])
         else:
             address = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0, 0])
-            port    = bytes([0, 0])
+            port = bytes([0, 0])
 
         if with_timestamp:
             return struct.pack("<LQ", int(time.time()), services) + address + port
@@ -157,9 +164,9 @@ class Serialize:
     @staticmethod
     def unserialize_network_address(data, with_timestamp=True):
         if with_timestamp and len(data) < 30:
-            raise MessageTooShort()
+            raise ValueError('MessageTooShort')
         elif not with_timestamp and len(data) < 26:
-            raise MessageTooShort()
+            raise ValueError('MessageTooShort')
 
         if with_timestamp:
             when, services = struct.unpack("<LQ", data[:12])
@@ -185,9 +192,9 @@ class Serialize:
     def wrap_network_message(coin, command, payload):
         magic = coin.NETWORK_MAGIC
         command = command[:12].encode("ascii")
-        command += bytes([0] * (12 - len(command))) # pad to 12 bytes
+        command += bytes([0] * (12 - len(command)))  # pad to 12 bytes
         length = struct.pack("<L", len(payload))
-        checksum = Bitcoin.hash(payload)[:4] # Checksum is first 4 bytes
+        checksum = Bitcoin.hash(payload)[:4]  # Checksum is first 4 bytes
         return magic + command + length + checksum + payload
 
     @staticmethod
@@ -203,11 +210,11 @@ class Serialize:
             raise InvalidNetworkMagic()
 
         i = 0
-        while data[4+i] != 0 and i < 12:
+        while data[4 + i] != 0 and i < 12:
             i += 1
 
         try:
-            command = data[4:4+i].decode('ascii')
+            command = data[4:4 + i].decode('ascii')
         except UnicodeDecodeError:
             raise InvalidCommandEncoding()
 
@@ -216,13 +223,12 @@ class Serialize:
 
         if (len(data) - 24) < length:
             return command, None, length, data
-        
-        payload = data[24:24+length]
-        leftover = data[24+length:]
+
+        payload = data[24:24 + length]
+        leftover = data[24 + length:]
 
         hash = Bitcoin.hash(payload)
         if hash[:4] != checksum:
             raise MessageChecksumFailure()
 
         return command, payload, length, leftover
-

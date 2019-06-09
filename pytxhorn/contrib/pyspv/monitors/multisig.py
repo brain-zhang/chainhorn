@@ -1,22 +1,30 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import struct
 
-from .. import base58
-
 from .basemonitor import BaseMonitor
 
-from ..keys import PrivateKey, PublicKey
-from ..script import *
+from ..keys import PublicKey
+from ..script import Script
+from ..script import (OP_0,
+                      OP_1,
+                      OP_PUSHDATA1,
+                      OP_PUSHDATA2,
+                      OP_PUSHDATA4,
+                      OP_HASH160,
+                      OP_EQUAL,
+                      OP_CHECKMULTISIG)
 from ..serialize import Serialize
-from ..transaction import TransactionInput, TransactionOutput, TransactionPrevOut
-from ..util import *
-from ..wallet import InvalidAddress, Spend
+from ..transaction import TransactionInput, TransactionPrevOut
+from ..util import hexstring_to_bytes, bytes_to_hexstring, base58_check
+from ..wallet import Spend
 
 
 logger = logging.getLogger('default')
 
 
-class MultisigScriptHashSpendInputCreator:
+class MultisigScriptHashSpendInputCreator(object):
     '''Input creators need to define the following class properties:
         self.prevout : a TransactionPrevOut
         self.script  : a byte sequence containing scriptPubKey
@@ -64,6 +72,7 @@ class MultisigScriptHashSpendInputCreator:
         # plus probably 2 bytes for the redemption script size, plus the redemption script iself
         return (73 + 1) * self.address_info['nreq'] + 2 + len(self.script)
 
+
 class MultisigScriptHashSpend(Spend):
     def __init__(self, coin, category, amount, address, prevout, script, address_info, spent_in=None):
         Spend.__init__(self, coin, category, amount)
@@ -102,10 +111,10 @@ class MultisigScriptHashSpend(Spend):
 
     def serialize(self):
         return Serialize.serialize_string(self.category) + Serialize.serialize_variable_int(self.amount) + \
-               self.prevout.serialize() + Serialize.serialize_string(self.address) + \
-               struct.pack('<L', len(self.script)) + self.script + \
-               Serialize.serialize_dict(self.address_info) + \
-               Serialize.serialize_list(list(self.spent_in))
+            self.prevout.serialize() + Serialize.serialize_string(self.address) + \
+            struct.pack('<L', len(self.script)) + self.script + \
+            Serialize.serialize_dict(self.address_info) + \
+            Serialize.serialize_list(list(self.spent_in))
 
     @staticmethod
     def unserialize(data, coin):
@@ -115,9 +124,9 @@ class MultisigScriptHashSpend(Spend):
         address, data = Serialize.unserialize_string(data)
 
         script_length = struct.unpack("<L", data[:4])[0]
-        script = data[4:4+script_length]
+        script = data[4:4 + script_length]
 
-        address_info, data = Serialize.unserialize_dict(data[4+script_length:])
+        address_info, data = Serialize.unserialize_dict(data[4 + script_length:])
 
         spent_in, data = Serialize.unserialize_list(data)
 
@@ -162,11 +171,11 @@ class MultisigScriptHashPaymentMonitor(BaseMonitor):
         public_keys = []
         while index < len(redemption_script) - 2:
             size = redemption_script[index]
-            if size not in (33, 65): # not a public key, too bad
+            if size not in (33, 65):  # not a public key, too bad
                 return
             if len(redemption_script) - (index + 1) < size:
                 return
-            public_keys.append(redemption_script[index+1:index+1+size])
+            public_keys.append(redemption_script[index + 1:index + 1 + size])
             if (size == 33 and (public_keys[-1][0] not in (0x02, 0x03))) or (size == 65 and public_keys[-1][0] != 0x04):
                 return
             index += size + 1
@@ -219,16 +228,17 @@ class MultisigScriptHashPaymentMonitor(BaseMonitor):
             pushes = []
             while index < len(input.script.program):
                 size = input.script.program[index]
-                if size == OP_PUSHDATA1 and (index+1) < len(input.script.program):
-                    size = input.script.program[index+1]
+                if size == OP_PUSHDATA1 and (index + 1) < len(input.script.program):
+                    size = input.script.program[index + 1]
                     index += 2
-                elif size == OP_PUSHDATA2 and (index+2) < len(input.script.program):
-                    size = input.script.program[index+1] | (input.script.program[index+2] << 8)
+                elif size == OP_PUSHDATA2 and (index + 2) < len(input.script.program):
+                    size = input.script.program[index + 1] | (input.script.program[index + 2] << 8)
                     index += 3
-                elif size == OP_PUSHDATA4 and (index+4) < len(input.script.program):
-                    size = input.script.program[index+1] | (input.script.program[index+2] << 8) | (input.script.program[index+3] << 16) | (input.script.program[index+4] << 24)
+                elif size == OP_PUSHDATA4 and (index + 4) < len(input.script.program):
+                    size = input.script.program[index + 1] | (input.script.program[index + 2] << 8) | \
+                        (input.script.program[index + 3] << 16) | (input.script.program[index + 4] << 24)
                     index += 5
-                pushes.append(input.script.program[index:index+size])
+                pushes.append(input.script.program[index:index + size])
                 index += size
 
             # The last data push has to be our redemption script

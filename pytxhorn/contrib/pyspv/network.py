@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import collections
 import ipaddress
 import logging
@@ -16,7 +18,7 @@ from .bloom import Bloom
 from .inv import Inv
 from .serialize import Serialize
 from .transaction import Transaction
-from .util import *
+from .util import bytes_to_hexstring
 
 
 logger = logging.getLogger('default')
@@ -38,19 +40,18 @@ class Manager(threading.Thread):
 
     BLOCKCHAIN_SYNC_WAIT_TIME = 10
 
-
-    HEADERS_REQUEST_TIMEOUT   = 25
+    HEADERS_REQUEST_TIMEOUT = 25
     GETBLOCKS_REQUEST_TIMEOUT = 60
-    BLOCK_REQUEST_TIMEOUT     = 120
-    TX_REQUEST_TIMEOUT        = 30
+    BLOCK_REQUEST_TIMEOUT = 120
+    TX_REQUEST_TIMEOUT = 30
 
-    MAX_MESSAGE_SIZE = 2*1024*1024
+    MAX_MESSAGE_SIZE = 2 * 1024 * 1024
 
     INVENTORY_CHECK_TIME = 3
     MANAGE_INVENTORY_CHECK_TIME = 60
-    KEEP_BLOCK_IN_INVENTORY_TIME = 120*60
-    KEEP_TRANSACTION_IN_INVENTORY_TIME = 30*60
-    REBROADCAST_TRANSACTION_TIME = 30*60
+    KEEP_BLOCK_IN_INVENTORY_TIME = 120 * 60
+    KEEP_TRANSACTION_IN_INVENTORY_TIME = 30 * 60
+    REBROADCAST_TRANSACTION_TIME = 30 * 60
 
     INVENTORY_FLAG_HOLD_FOREVER = 0x01
     INVENTORY_FLAG_MUST_CONFIRM = 0x02
@@ -75,7 +76,7 @@ class Manager(threading.Thread):
 
         self.blockchain_sync_lock = threading.Lock()
 
-        self.tx_bloom_filter = Bloom(hash_count=32, size=2**23) # Use 8MB for our tx bloom filter
+        self.tx_bloom_filter = Bloom(hash_count=32, size=2**23)  # Use 8MB for our tx bloom filter
 
         self.headers_request = None
         self.headers_request_last_peer = None
@@ -156,8 +157,10 @@ class Manager(threading.Thread):
 
             with self.blockchain_sync_lock:
                 if self.headers_request is not None and \
-                       ((self.headers_request['peer'].inprogress_command != 'headers' and (now - self.headers_request['time']) >= Manager.HEADERS_REQUEST_TIMEOUT) or \
-                        (self.headers_request['peer'].inprogress_command == 'headers' and (now - self.headers_request['peer'].last_data_time) >= Manager.HEADERS_REQUEST_TIMEOUT)):
+                        (
+                            (self.headers_request['peer'].inprogress_command != 'headers' and (now - self.headers_request['time']) >= Manager.HEADERS_REQUEST_TIMEOUT) or \
+                            (self.headers_request['peer'].inprogress_command == 'headers' and (now - self.headers_request['peer'].last_data_time) >= Manager.HEADERS_REQUEST_TIMEOUT)
+                        ):
 
                     # Misbehaving/dead peer?
                     self.peer_is_bad(self.headers_request['peer'].peer_address)
@@ -174,11 +177,11 @@ class Manager(threading.Thread):
         for seed in self.spv.coin.SEEDS:
             try:
                 for _, _, _, _, ipport in socket.getaddrinfo(seed, None):
-                    if len(ipport) != 2: # no IPv6 support yet
+                    if len(ipport) != 2:  # no IPv6 support yet
                         continue
                     ip, _ = ipport
                     self.add_peer_address((ip, self.spv.coin.DEFAULT_PORT))
-            except Exception as e:
+            except Exception:
                 continue
 
     def add_peer_address(self, peer_address):
@@ -225,7 +228,7 @@ class Manager(threading.Thread):
             assert fp.tell() >= Manager.PEER_RECORD_SIZE  # This has to be true, since self.peer_addresses has at least one entry
 
             # When files are opened for append, they are positioned at the end of the file. Back up and read the final record, it'll be used to replace 'old'
-            fp.seek(fp.tell()-Manager.PEER_RECORD_SIZE, 0)
+            fp.seek(fp.tell() - Manager.PEER_RECORD_SIZE, 0)
             data = fp.read(Manager.PEER_RECORD_SIZE)
             fp.truncate(self.peer_index * Manager.PEER_RECORD_SIZE)
 
@@ -456,13 +459,13 @@ class Manager(threading.Thread):
 
             self.inventory.append(inv)
             self.inventory_items[inv] = {
-                'sent_to'   : set(),
-                'inv_to'    : set(),
-                'data'      : item.serialize(),
+                'sent_to': set(),
+                'inv_to': set(),
+                'data': item.serialize(),
                 'time_added': time.time(),
                 'time_check': time.time(),
-                'last_sent' : 0,
-                'flags'     : flags
+                'last_sent': 0,
+                'flags': flags
             }
 
             # Transactions that have MUST_CONFIRM set have to be added to our txdb, otherwise
@@ -535,8 +538,6 @@ class Manager(threading.Thread):
                     self.inventory_items[inv]['inv_to'].add(peer_address)
 
     def will_send_inventory(self, peer_address, inv):
-        now = time.time()
-
         with self.inv_lock:
             if inv not in self.inventory_items:
                 return Manager.REQUEST_DONT
@@ -549,7 +550,7 @@ class Manager(threading.Thread):
 
             return Manager.REQUEST_GO
 
-################################################################################
+
 ################################################################################
 class Peer(threading.Thread):
     MAX_INVS_IN_PROGRESS = 10
@@ -634,7 +635,7 @@ class Peer(threading.Thread):
             self.socket.settimeout(0.1)
             logger.debug("[PEER] {} connected.".format(self.peer_address))
             return True
-        except Exception as _:
+        except Exception:
             self.state = 'dead'
             self.manager.peer_is_bad(self.peer_address)
             logger.debug("[PEER] {} could not connect.".format(self.peer_address))
@@ -829,7 +830,7 @@ class Peer(threading.Thread):
             if res == Manager.REQUEST_GO:
                 assert inv not in self.inprogress_invs
                 requests.add(inv)
-                self.invs[inv] = now + 2 # it'll get retried later if it doesn't get removed below
+                self.invs[inv] = now + 2  # it'll get retried later if it doesn't get removed below
             elif res == Manager.REQUEST_DONT:
                 aborts.add(inv)
             elif res == Manager.REQUEST_WAIT:
@@ -894,16 +895,16 @@ class Peer(threading.Thread):
     def send_version(self):
         logger.info("[PEER] send version to {}".format(self.peer_address))
         assert not self.sent_version, "don't call this twice"
-        version  = Manager.PROTOCOL_VERSION
+        version = Manager.PROTOCOL_VERSION
         services = Manager.SERVICES
-        now      = int(time.time())
+        now = int(time.time())
 
         recipient_address = Serialize.serialize_network_address(self.peer_address, services, with_timestamp=False)
-        sender_address    = Serialize.serialize_network_address(None, services, with_timestamp=False)
+        sender_address = Serialize.serialize_network_address(None, services, with_timestamp=False)
 
-        nonce      = random.randrange(0, 1 << 64)
+        nonce = random.randrange(0, 1 << 64)
         user_agent = Serialize.serialize_string(self.manager.user_agent)
-        last_block = 0 # we aren't a full node...
+        last_block = 0  # we aren't a full node...
 
         payload = struct.pack("<LQQ", version, services, now) + recipient_address + sender_address + struct.pack("<Q", nonce) + user_agent + struct.pack("<L", last_block)
         self.queue_outgoing_data(Serialize.wrap_network_message(self.manager.spv.coin, "version", payload))
@@ -986,7 +987,7 @@ class Peer(threading.Thread):
                 # https://github.com/bitcoin/bips/blob/master/bip-0037.mediawiki
                 self.peer_last_block = struct.unpack("<L", payload[:-1])[0]
             else:
-                raise ValueError("No support version payload:{}".format(str(payload)))
+                raise ValueError("No support version payload:{}, nonce:{}".format(str(payload), nonce))
 
         except struct.error:
             # Not enough data usually

@@ -1,18 +1,25 @@
+# -*- coding: utf-8 -*-
+
 from ..keys import PrivateKey
 from ..transaction import TransactionOutput
 from ..wallet import InvalidAddress
 
-from ..script import *
-from ..util import *
+from ..script import Script
+from ..script import (OP_DUP,
+                      OP_HASH160,
+                      OP_CHECKSIG,
+                      OP_EQUALVERIFY)
+from ..util import base58
 
-class PubKeyPayment:
+
+class PubKeyPayment(object):
     def __init__(self, address, amount):
         assert isinstance(amount, int), "amount must be in satoshis"
         assert isinstance(address, str), "address must be a string"
 
         self.address = address
         self.amount = amount
-        
+
     def create_outputs(self, spv):
         address_bytes = int.to_bytes(base58.decode(self.address), spv.coin.ADDRESS_BYTE_LENGTH, 'big')
         k = len(spv.coin.ADDRESS_VERSION_BYTES)
@@ -50,5 +57,3 @@ class PubKeyChange:
 
         spv.wallet.add('private_key', change_private_key, {'label': ''})
         return TransactionOutput(amount=0, script=script)
-
-

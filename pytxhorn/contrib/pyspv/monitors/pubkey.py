@@ -1,22 +1,26 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import struct
 
 from .basemonitor import BaseMonitor
-from .. import base58
-from ..keys import PrivateKey, PublicKey
+from ..keys import PublicKey
 from ..serialize import Serialize
-from ..transaction import TransactionPrevOut, TransactionOutput, TransactionInput
-from ..transactionbuilder import TransactionBuilder
-from ..wallet import InvalidAddress, Spend
+from ..transaction import TransactionPrevOut, TransactionInput
+from ..wallet import Spend
 
-from ..script import *
-from ..util import *
+from ..script import Script
+from ..script import (OP_HASH160,
+                      OP_DUP,
+                      OP_EQUALVERIFY,
+                      OP_CHECKSIG)
+from ..util import bytes_to_hexstring, base58_check
 
 
 logger = logging.getLogger('default')
 
 
-class PubKeySpendInputCreator:
+class PubKeySpendInputCreator(object):
     '''Input creators need to define the following class properties:
         self.prevout : a TransactionPrevOut
         self.script  : a byte sequence containing scriptPubKey
@@ -52,6 +56,7 @@ class PubKeySpendInputCreator:
         # pubkeys are 33 if compressed, 65 if uncompressed (+1 for size)
         return 2 + 73 + 1 + 1 + (len(self.address_info['public_key_hex']) // 2)
 
+
 class PubKeySpend(Spend):
     def __init__(self, coin, category, amount, address, prevout, script, address_info, spent_in=None):
         Spend.__init__(self, coin, category, amount)
@@ -81,10 +86,10 @@ class PubKeySpend(Spend):
 
     def serialize(self):
         return Serialize.serialize_string(self.category) + Serialize.serialize_variable_int(self.amount) + \
-               self.prevout.serialize() + Serialize.serialize_string(self.address) + \
-               struct.pack('<L', len(self.script)) + self.script + \
-               Serialize.serialize_dict(self.address_info) + \
-               Serialize.serialize_list(list(self.spent_in))
+            self.prevout.serialize() + Serialize.serialize_string(self.address) + \
+            struct.pack('<L', len(self.script)) + self.script + \
+            Serialize.serialize_dict(self.address_info) + \
+            Serialize.serialize_list(list(self.spent_in))
 
     @classmethod
     def unserialize(cls, data, coin):
@@ -94,9 +99,9 @@ class PubKeySpend(Spend):
         address, data = Serialize.unserialize_string(data)
 
         script_length = struct.unpack("<L", data[:4])[0]
-        script = data[4:4+script_length]
+        script = data[4:4 + script_length]
 
-        address_info, data = Serialize.unserialize_dict(data[4+script_length:])
+        address_info, data = Serialize.unserialize_dict(data[4 + script_length:])
 
         spent_in, data = Serialize.unserialize_list(data)
 
@@ -104,7 +109,12 @@ class PubKeySpend(Spend):
         return spends, data
 
     def __str__(self):
-        return '<{} {} BTC prevout={} address={}{}>'.format(self.__class__.__name__, self.coin.format_money(self.amount), str(self.prevout), self.address, ' SPENT' if len(self.spent_in) else '')
+        return '<{} {} BTC prevout={} address={}{}>'.format(self.__class__.__name__,
+                                                            self.coin.format_money(self.amount),
+                                                            str(self.prevout),
+                                                            self.address,
+                                                            ' SPENT' if len(self.spent_in) else '')
+
 
 class PubKeyPaymentMonitor(BaseMonitor):
     spend_classes = [PubKeySpend]
@@ -167,11 +177,11 @@ class PubKeyPaymentMonitor(BaseMonitor):
                 continue
 
             # The second data push has to be a pubkey, though in the future we may need to extract the public key from the signature
-            size2 = input.script.program[size+1]
+            size2 = input.script.program[size + 1]
             if size2 not in (33, 65):
                 continue
 
-            public_key_bytes = input.script.program[size+2:]
+            public_key_bytes = input.script.program[size + 2:]
             if len(public_key_bytes) != size2:
                 continue
 
@@ -202,12 +212,12 @@ class PubKeyPaymentMonitor(BaseMonitor):
             # Analyze the script for standard pubkey payments
             script = output.script.program
             if len(script) == 25 and script[0] == OP_DUP \
-                         and script[1] == OP_HASH160 and script[2] == 20 \
-                         and script[23] == OP_EQUALVERIFY and script[24] == OP_CHECKSIG:
+                    and script[1] == OP_HASH160 and script[2] == 20 \
+                    and script[23] == OP_EQUALVERIFY and script[24] == OP_CHECKSIG:
                 # Pay-to-pubkey-hash
                 address = base58_check(self.spv.coin, script[3:23], version_bytes=self.spv.coin.ADDRESS_VERSION_BYTES)
             elif len(script) in (35, 67) and script[0] in (33, 65) and \
-                         script[0] == (len(script) - 2) and script[-1] == OP_CHECKSIG:
+                    script[0] == (len(script) - 2) and script[-1] == OP_CHECKSIG:
                 # Pay-to-pubkey
                 address = base58_check(self.spv.coin, self.spv.coin.hash160(script[1:-1]), version_bytes=self.spv.coin.ADDRESS_VERSION_BYTES)
             else:

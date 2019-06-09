@@ -1,17 +1,21 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import hashlib
 
 from .basemonitor import BaseMonitor
 from .pubkey import PubKeySpend
-from .. import base58
 from ..keys import PrivateKey, PublicKey
-from ..serialize import Serialize
-from ..transaction import TransactionPrevOut, TransactionOutput, TransactionInput
-from ..transactionbuilder import TransactionBuilder
-from ..wallet import InvalidAddress, Spend, DuplicateWalletItem
+from ..transaction import TransactionPrevOut, TransactionInput
+from ..wallet import DuplicateWalletItem
 
-from ..script import *
-from ..util import *
+from ..script import Script
+from ..script import (OP_RETURN,
+                      OP_DUP,
+                      OP_HASH160,
+                      OP_CHECKSIG,
+                      OP_EQUALVERIFY)
+from ..util import bytes_to_hexstring
 
 
 logger = logging.getLogger('default')
@@ -127,8 +131,8 @@ class StealthAddressPaymentMonitor(BaseMonitor):
             # Analyze the script for standard pubkey payments to one of our stealth addresses
             script = output.script.program
             if len(script) == 25 and script[0] == OP_DUP \
-                         and script[1] == OP_HASH160 and script[2] == 20 \
-                         and script[23] == OP_EQUALVERIFY and script[24] == OP_CHECKSIG:
+                    and script[1] == OP_HASH160 and script[2] == 20 \
+                    and script[23] == OP_EQUALVERIFY and script[24] == OP_CHECKSIG:
                 # Pay-to-pubkey-hash
                 address_bytes = script[3:23]
             else:

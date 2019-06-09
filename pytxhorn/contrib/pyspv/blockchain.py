@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import collections
 import logging
 import shelve
@@ -10,12 +12,12 @@ from .block import Block, BlockHeader
 from .bitcoin import Bitcoin
 from .serialize import Serialize
 from .script import Script
-from .util import *
+from .util import bytes_to_hexstring, target_to_bits, bits_to_target
 
 logger = logging.getLogger('default')
 
 
-class Blockchain:
+class Blockchain(object):
     SAVED_BLOCKCHAIN_LENGTH = Bitcoin.WORK_INTERVAL * 2 * 56 * 100  # save for future 100 years
 
     def __init__(self, spv):
@@ -27,8 +29,21 @@ class Blockchain:
         self.blockchain_db_file = spv.config.get_file("blockchain")
         self.blockchain_lock = threading.Lock()  # TODO use RLock?
 
-        genesis = self.create_block_link(hash=self.spv.coin.GENESIS_BLOCK_HASH, height=0, main=True, connected=True, header=BlockHeader(spv.coin, timestamp=self.spv.coin.GENESIS_BLOCK_TIMESTAMP, bits=self.spv.coin.GENESIS_BLOCK_BITS))
-        checkpoint = self.create_block_link(hash=self.spv.coin.CHECKPOINT_BLOCK_HASH, height=self.spv.coin.CHECKPOINT_BLOCK_HEIGHT, main=True, connected=True, header=BlockHeader(spv.coin, timestamp=self.spv.coin.CHECKPOINT_BLOCK_TIMESTAMP, bits=self.spv.coin.CHECKPOINT_BLOCK_BITS))
+        genesis = self.create_block_link(hash=self.spv.coin.GENESIS_BLOCK_HASH,
+                                         height=0,
+                                         main=True,
+                                         connected=True,
+                                         header=BlockHeader(spv.coin,
+                                                            timestamp=self.spv.coin.GENESIS_BLOCK_TIMESTAMP,
+                                                            bits=self.spv.coin.GENESIS_BLOCK_BITS)
+                                         )
+        checkpoint = self.create_block_link(hash=self.spv.coin.CHECKPOINT_BLOCK_HASH,
+                                            height=self.spv.coin.CHECKPOINT_BLOCK_HEIGHT,
+                                            main=True,
+                                            connected=True,
+                                            header=BlockHeader(spv.coin, timestamp=self.spv.coin.CHECKPOINT_BLOCK_TIMESTAMP,
+                                                               bits=self.spv.coin.CHECKPOINT_BLOCK_BITS)
+                                            )
 
         self.blocks = {
             self.spv.coin.GENESIS_BLOCK_HASH: genesis,
@@ -94,7 +109,6 @@ class Blockchain:
                             raise Exception("Uh oh. Blockchain state is corrupted. Loaded {} blocks to height {}.".format(i, self.best_chain['height']))
 
                 logger.info('[BLOCKCHAIN] done ({:5.3f} sec)'.format(time.time() - start_time))
-
 
     def create_block_link(self, hash, height=0, main=False, connected=False, prev=None, header=None, work=None):
         if work is None and header is not None:
@@ -373,7 +387,7 @@ class Blockchain:
                 break
 
         times.sort()
-        block_link['median_time_past'] = times[len(times)//2]
+        block_link['median_time_past'] = times[len(times) // 2]
         return block_link['median_time_past']
 
     def __is_block_majority(self, min_version, block_link_start, target_block_count, block_population_count):
@@ -454,9 +468,9 @@ class Blockchain:
 
                 links = blockchain['links']
                 links[index] = {
-                    'work'  : notify_block_link['work'],
+                    'work': notify_block_link['work'],
                     'height': notify_block_link['height'],
-                    'hash'  : notify_block_link['hash'],
+                    'hash': notify_block_link['hash'],
                     'header': notify_block_link['header'].serialize(),
                 }
 

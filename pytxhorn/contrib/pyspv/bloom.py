@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 from bitarray import bitarray
 
-class Bloom:
+
+class Bloom(object):
     def __init__(self, size, hash_count):
         self.d = bitarray(size)
         self.n = hash_count
@@ -28,4 +31,3 @@ class Bloom:
                 return False
 
         return True
-

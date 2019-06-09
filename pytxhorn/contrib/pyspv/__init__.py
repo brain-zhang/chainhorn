@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import argparse
 import ipaddress
 import sys
@@ -6,26 +8,16 @@ import logging
 
 from . import blockchain
 from . import inv
-from . import keys
 from . import network
-from . import script
-from . import transaction
 from . import transactionbuilder
 from . import txdb
 from . import wallet
 
-from .bitcoin import *
-
+from .bitcoin import Bitcoin
 from .monitors.pubkey import PubKeyPaymentMonitor
-from .payments.pubkey import PubKeyChange, PubKeyPayment
-
 from .monitors.multisig import MultisigScriptHashPaymentMonitor
-from .payments.multisig import MultisigScriptHashPayment
-
 from .monitors.stealth import StealthAddressPaymentMonitor
-from .payments.stealth import StealthAddressPayment
-
-from .util import *
+from .util import Config
 
 
 VERSION = 'pyspv 0.0.1-alpha1'
@@ -33,7 +25,8 @@ VERSION_NUMBER = 0x00000101
 
 logger = logging.getLogger('default')
 
-class pyspv:
+
+class pyspv(object):
     '''SPV encapsulation class.  One instance of this class is enough to manage a wallet, transactions,
     network. blockchain, etc.
 
@@ -55,7 +48,15 @@ class pyspv:
     :type app_datapath: string datapath, exp: '/var/pytxhorn/data'
     '''
 
-    def __init__(self, app_name, testnet=False, peer_goal=8, broadcast_peer_goal=8, listen=('', 0), coin=Bitcoin, tor=False, sync_block_start=None, app_datapath=None):
+    def __init__(self, app_name,
+                 testnet=False,
+                 peer_goal=8,
+                 broadcast_peer_goal=8,
+                 listen=('', 0),
+                 coin=Bitcoin,
+                 tor=False,
+                 sync_block_start=None,
+                 app_datapath=None):
         self.app_name = app_name
         self.time_offset = 0
         self.time_samples = []
@@ -76,7 +77,7 @@ class pyspv:
         self.testnet = testnet
         self.coin = coin.Testnet if testnet else coin
 
-        self.config = Config(app_name, self.coin, testnet=testnet)
+        self.config = Config(app_name, self.coin, testnet=testnet, app_datapath=app_datapath)
 
         logger.info('[PYSPV] app data at {}'.format(self.config.path))
 
@@ -85,7 +86,11 @@ class pyspv:
         self.blockchain = blockchain.Blockchain(spv=self)
         self.txdb = txdb.TransactionDatabase(spv=self)
 
-        self.wallet = wallet.Wallet(spv=self, monitors=[PubKeyPaymentMonitor, MultisigScriptHashPaymentMonitor, StealthAddressPaymentMonitor])
+        self.wallet = wallet.Wallet(spv=self,
+                                    monitors=[PubKeyPaymentMonitor,
+                                              MultisigScriptHashPaymentMonitor,
+                                              StealthAddressPaymentMonitor]
+                                    )
         self.wallet.load()
 
         self.network_manager = network.Manager(spv=self, peer_goal=peer_goal, broadcast_peer_goal=broadcast_peer_goal, listen=listen, tor=tor, user_agent=VERSION)
@@ -214,4 +219,3 @@ class pyspv:
         will not function properly.
         '''
         self.txdb.on_block_removed(block_header, block_height)
-

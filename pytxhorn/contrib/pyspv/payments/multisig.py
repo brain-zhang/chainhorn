@@ -1,18 +1,21 @@
-from ..keys import PrivateKey
+# -*- coding: utf-8 -*-
+
 from ..transaction import TransactionOutput
 from ..wallet import InvalidAddress
 
-from ..script import *
-from ..util import *
+from ..script import Script
+from ..script import (OP_EQUAL, OP_HASH160)
+from ..util import base58
 
-class MultisigScriptHashPayment:
+
+class MultisigScriptHashPayment(object):
     def __init__(self, address, amount):
         assert isinstance(amount, int), "amount must be in satoshis"
         assert isinstance(address, str), "address must be a string"
 
         self.address = address
         self.amount = amount
-        
+
     def create_outputs(self, spv):
         address_bytes = int.to_bytes(base58.decode(self.address), spv.coin.ADDRESS_BYTE_LENGTH, 'big')
         k = len(spv.coin.P2SH_ADDRESS_VERSION_BYTES)
@@ -29,4 +32,3 @@ class MultisigScriptHashPayment:
         script.push_op(OP_EQUAL)
 
         yield TransactionOutput(amount=self.amount, script=script)
-

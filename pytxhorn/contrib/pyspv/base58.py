@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """ base58 encoding / decoding functions """
 import unittest
 
@@ -61,5 +63,6 @@ class Base58Tests(unittest.TestCase):
     def test_encode_negative_number_returns_empty_string(self):
         self.assertEqual('', encode(-100))
 
+
 if __name__ == '__main__':
-  unittest.main()
+    unittest.main()

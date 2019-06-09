@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import fractions
 import random
 import os
@@ -9,14 +11,15 @@ WARNING = 2
 ERROR = 3
 CRITICAL = 4
 
-class Config:
+
+class Config(object):
     '''Config is reponsible for locating a consistent location for configuration files, and separating coins and their testnet data'''
     def __init__(self, name, coin, testnet, app_datapath=None):
         if os.name != 'nt':
             name = '.' + name
 
         if app_datapath is not None:
-            self.path = os.sep.join([app_datapath, name])
+            self.path = os.sep.join([app_datapath])
         else:
             self.path = os.sep.join([os.path.expanduser("~"), name])
 
@@ -47,11 +50,13 @@ def bytes_to_hexstring(data, reverse=True):
     else:
         return ''.join(['{:02x}'.format(v) for v in data])
 
+
 def hexstring_to_bytes(s, reverse=True):
     if reverse:
-        return bytes(reversed([int(s[x:x+2], 16) for x in range(0, len(s), 2)]))
+        return bytes(reversed([int(s[x:x + 2], 16) for x in range(0, len(s), 2)]))
     else:
-        return bytes([int(s[x:x+2], 16) for x in range(0, len(s), 2)])
+        return bytes([int(s[x:x + 2], 16) for x in range(0, len(s), 2)])
+
 
 def base58_check(coin, src, version_bytes=0, suffix_bytes=b''):
     if isinstance(version_bytes, int):
@@ -75,15 +80,17 @@ def base58_check(coin, src, version_bytes=0, suffix_bytes=b''):
         return ('1' * lz) + e
     return e
 
+
 def bits_to_target(bits):
     r = bits & 0x007FFFFF
-    mant = ( bits >> 24 ) & 0xFF
-    neg = -1 if ( bits & 0x00800000 ) != 0 else 1
+    mant = (bits >> 24) & 0xFF
+    neg = -1 if (bits & 0x00800000) != 0 else 1
 
     if mant <= 3:
         return neg * (r >> (8 * (3 - mant)))
     else:
         return neg * (r << (8 * (mant - 3)))
+
 
 def target_to_bits(target):
     v = []
@@ -100,12 +107,12 @@ def target_to_bits(target):
 
     return (m << 24) | (v[-1] << 16) | (v[-2] << 8) | v[-3]
 
+
 def random_coprime(n):
-    assert n < (1<<32)
-    p = random.randrange(n+1, 1<<32)
+    assert n < (1 << 32)
+    p = random.randrange(n + 1, 1 << 32)
     while True:
         t = fractions.gcd(n, p)
         if t == 1:
             return p
         p = p // t
-

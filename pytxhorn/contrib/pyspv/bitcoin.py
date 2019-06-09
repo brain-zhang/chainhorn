@@ -1,24 +1,28 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 import string
 
-from .util import *
+from .util import hexstring_to_bytes
+
 
 class InvalidMoney(Exception):
     pass
 
-class Bitcoin:
-    NAME                       = 'Bitcoin'
 
-    ADDRESS_VERSION_BYTES         = b'\x00'
-    ADDRESS_BYTE_LENGTH           = 25 # 1 for version byte + 20 for ripemd60 hash + 4 for checksum
-    P2SH_ADDRESS_VERSION_BYTES    = b'\x05'
-    P2SH_ADDRESS_BYTE_LENGTH      = 25 # 1 for version byte + 20 for ripemd60 hash + 4 for checksum
-    PRIVATE_KEY_VERSION_BYTES     = b'\x80'
+class Bitcoin(object):
+    NAME = 'Bitcoin'
+
+    ADDRESS_VERSION_BYTES = b'\x00'
+    ADDRESS_BYTE_LENGTH = 25  # 1 for version byte + 20 for ripemd60 hash + 4 for checksum
+    P2SH_ADDRESS_VERSION_BYTES = b'\x05'
+    P2SH_ADDRESS_BYTE_LENGTH = 25  # 1 for version byte + 20 for ripemd60 hash + 4 for checksum
+    PRIVATE_KEY_VERSION_BYTES = b'\x80'
     STEALTH_ADDRESS_VERSION_BYTES = b'\x09'
-    STEALTH_ADDRESS_SUFFIX_BYTES  = b'\x00\x00'
-    STEALTH_ADDRESS_BYTE_LENGTH   = 40 # 33 byte compressed pubkey + 1 version byte + 2 suffix bytes + 4 for checksum
+    STEALTH_ADDRESS_SUFFIX_BYTES = b'\x00\x00'
+    STEALTH_ADDRESS_BYTE_LENGTH = 40  # 33 byte compressed pubkey + 1 version byte + 2 suffix bytes + 4 for checksum
 
-    NETWORK_MAGIC              = bytes([0xF9, 0xBE, 0xB4, 0xD9])
+    NETWORK_MAGIC = bytes([0xF9, 0xBE, 0xB4, 0xD9])
 
     TRANSACTION_VERSION = 1
 
@@ -35,18 +39,18 @@ class Bitcoin:
         'seed.bitnodes.io',
     ]
 
-    TARGET_BLOCK_TIMESPAN = 14 * 24 * 60 * 60 # Try to adjust POW every two weeks
-    TARGET_BLOCK_SPACING  = 10 * 60           # Try to maintain 10 minutes between blocks
-    WORK_INTERVAL         = TARGET_BLOCK_TIMESPAN // TARGET_BLOCK_SPACING
+    TARGET_BLOCK_TIMESPAN = 14 * 24 * 60 * 60  # Try to adjust POW every two weeks
+    TARGET_BLOCK_SPACING = 10 * 60            # Try to maintain 10 minutes between blocks
+    WORK_INTERVAL = TARGET_BLOCK_TIMESPAN // TARGET_BLOCK_SPACING
 
-    MEDIAN_TIME_SPAN      = 11 # blocks
+    MEDIAN_TIME_SPAN = 11  # blocks
 
     COIN = 100000000
     CENT = 1000000
     MAX_COINS = 21000000 * COIN
 
     STARTING_BLOCK_REWARD = 50 * COIN
-    BLOCK_REWARD_HALVING  = 210000
+    BLOCK_REWARD_HALVING = 210000
 
     MAXIMUM_TRANSACTION_FEE = 1000000
     MINIMUM_TRANSACTION_FEE = 10000
@@ -57,10 +61,10 @@ class Bitcoin:
     TRANSACTION_CONFIRMATION_DEPTH = 7
 
     # Genesis details
-    GENESIS_BLOCK_HASH      = hexstring_to_bytes("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
-    GENESIS_BLOCK_VERSION   = 1
+    GENESIS_BLOCK_HASH = hexstring_to_bytes("000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
+    GENESIS_BLOCK_VERSION = 1
     GENESIS_BLOCK_TIMESTAMP = 1231006505
-    GENESIS_BLOCK_BITS      = 0x1D00FFFF
+    GENESIS_BLOCK_BITS = 0x1D00FFFF
 
     # Checkpoint block height MUST be a multiple of the work interval in order to verify difficulty changes
     # CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("0000000000000003cbb18a8ea04e14452ad0c3bc92ed709e4df5a50b2a24da0e")
@@ -76,10 +80,10 @@ class Bitcoin:
     # CHECKPOINT_BLOCK_BITS      = 0x6F5D0F55
 
     # for 2019-01-14 10:19:54 block; recent update
-    CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("00000000000000000021ac236d0b29b4467f99c2c8783032451ba7b735045e3c")
-    CHECKPOINT_BLOCK_HEIGHT    = 558432
+    CHECKPOINT_BLOCK_HASH = hexstring_to_bytes("00000000000000000021ac236d0b29b4467f99c2c8783032451ba7b735045e3c")
+    CHECKPOINT_BLOCK_HEIGHT = 558432
     CHECKPOINT_BLOCK_TIMESTAMP = 1547432394
-    CHECKPOINT_BLOCK_BITS      = 0x172FD633
+    CHECKPOINT_BLOCK_BITS = 0x172FD633
 
     @staticmethod
     def hash(data):
@@ -109,7 +113,6 @@ class Bitcoin:
         if v[-1] == '.':
             v = v + '0'
         return v
-
 
     @staticmethod
     def parse_money(s):
@@ -153,7 +156,7 @@ class Bitcoin:
                 v = int(s) * scale
         else:
             # Cannot pass two decimals
-            dec = s[i+1:].rstrip('0')
+            dec = s[i + 1:].rstrip('0')
             assert '.' not in dec
 
             num_dec = len(dec)  # number of decimals present (trailing 0s have already been removed)
@@ -168,11 +171,11 @@ class Bitcoin:
 
 
 class BitcoinTestnet(Bitcoin):
-    ADDRESS_VERSION_BYTES         = b'\x6f'
-    P2SH_ADDRESS_VERSION_BYTES    = bytes([196])
-    PRIVATE_KEY_VERSION_BYTES     = bytes([0x6f + 0x80])
+    ADDRESS_VERSION_BYTES = b'\x6f'
+    P2SH_ADDRESS_VERSION_BYTES = bytes([196])
+    PRIVATE_KEY_VERSION_BYTES = bytes([0x6f + 0x80])
     STEALTH_ADDRESS_VERSION_BYTES = bytes([0x09 + 0x80])
-    NETWORK_MAGIC                 = bytes([0x0B, 0x11, 0x09, 0x07])
+    NETWORK_MAGIC = bytes([0x0B, 0x11, 0x09, 0x07])
 
     DEFAULT_PORT = 18333
 
@@ -181,16 +184,16 @@ class BitcoinTestnet(Bitcoin):
         'testnet-seed.bluematt.me',
     ]
 
-    GENESIS_BLOCK_HASH      = hexstring_to_bytes("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
-    GENESIS_BLOCK_VERSION   = 1
+    GENESIS_BLOCK_HASH = hexstring_to_bytes("000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
+    GENESIS_BLOCK_VERSION = 1
     GENESIS_BLOCK_TIMESTAMP = 1296688602
-    GENESIS_BLOCK_BITS      = 0x1D00FFFF
+    GENESIS_BLOCK_BITS = 0x1D00FFFF
 
     # No checkpoint (yet) for testnet
-    CHECKPOINT_BLOCK_HASH      = hexstring_to_bytes("0000000000035aa86364e6659e54913388a6d8d6f42587771a5dc9f9bf383f4f")
-    CHECKPOINT_BLOCK_HEIGHT    = 153216
+    CHECKPOINT_BLOCK_HASH = hexstring_to_bytes("0000000000035aa86364e6659e54913388a6d8d6f42587771a5dc9f9bf383f4f")
+    CHECKPOINT_BLOCK_HEIGHT = 153216
     CHECKPOINT_BLOCK_TIMESTAMP = 1386677918
-    CHECKPOINT_BLOCK_BITS      = 0x1B05B143
+    CHECKPOINT_BLOCK_BITS = 0x1B05B143
+
 
 Bitcoin.Testnet = BitcoinTestnet
-

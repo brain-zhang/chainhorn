@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import random
 import shelve
@@ -8,7 +10,7 @@ from collections import defaultdict
 from contextlib import closing
 
 from .keys import PrivateKey
-from .util import *
+from .util import random_coprime
 
 
 logger = logging.getLogger('default')
@@ -199,14 +201,14 @@ class Wallet:
 
                 spends = d['spends']
                 spends[spend_hash] = {
-                    'class'   : spend.__class__.__name__,
-                    'data'    : spend.serialize(),
+                    'class': spend.__class__.__name__,
+                    'data': spend.serialize(),
                 }
 
                 d['spends'] = spends
 
                 self.spends[spend_hash] = {
-                    'spend'   : spend,
+                    'spend': spend,
                 }
 
                 self.spends_by_index.append(spend_hash)
@@ -241,15 +243,15 @@ class Wallet:
 
                 spends.pop(spend_hash)
                 spends[spend_hash] = {
-                    'class'   : spend.__class__.__name__,
-                    'data'    : spend.serialize(),
+                    'class': spend.__class__.__name__,
+                    'data': spend.serialize(),
                 }
 
                 d['spends'] = spends
 
                 old_spend = self.spends.pop(spend_hash)
                 self.spends[spend_hash] = {
-                    'spend'   : spend,
+                    'spend': spend,
                 }
 
                 if spend.category not in self.balance:
@@ -412,7 +414,8 @@ class Wallet:
                 if hasattr(m, 'on_tx'):
                     getattr(m, 'on_tx')(tx)
 
-class Spend:
+
+class Spend(object):
     def __init__(self, coin, category, amount):
         self.coin = coin
         self.category = category
@@ -429,4 +432,3 @@ class Spend:
 
     def serialize(self):
         raise NotImplementedError("must implement in derived class")
-

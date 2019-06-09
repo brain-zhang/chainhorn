@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 
-class BaseMonitor:
+
+class BaseMonitor(object):
     def __init__(self, spv):
         self.spv = spv
 
@@ -10,4 +12,3 @@ class BaseMonitor:
 
     def on_tx(self, tx):
         raise NotImplementedError("Implement me")
-

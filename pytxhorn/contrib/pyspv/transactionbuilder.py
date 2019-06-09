@@ -1,11 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import random
 
-from .keys import PrivateKey
-from .script import Script
 from .transaction import Transaction, TransactionOutput, UnsignedTransactionInput, TransactionTooExpensive
-
-from .util import *
 
 
 logger = logging.getLogger('default')

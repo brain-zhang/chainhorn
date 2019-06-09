@@ -1,11 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import struct
 
-from .serialize import SerializeDataTooShort, Serialize
-from .util import *
+from .serialize import SerializeDataTooShort
+from .util import bytes_to_hexstring
 
-class Inv:
+
+class Inv(object):
     MSG_ERROR = 0
-    MSG_TX    = 1
+    MSG_TX = 1
     MSG_BLOCK = 2
 
     def __init__(self, type=MSG_ERROR, hash=None):
@@ -22,11 +25,11 @@ class Inv:
 
     def __str__(self):
         return '<inv {} {}>'.format(
-                { Inv.MSG_ERROR: 'error',
-                  Inv.MSG_TX   : 'tx',
-                  Inv.MSG_BLOCK: 'block' }[self.type],
-                bytes_to_hexstring(self.hash)
-                )
+            {Inv.MSG_ERROR: 'error',
+             Inv.MSG_TX: 'tx',
+             Inv.MSG_BLOCK: 'block'}[self.type],
+            bytes_to_hexstring(self.hash)
+        )
 
     def serialize(self):
         assert self.hash is not None, "cannot serialize"
@@ -39,4 +42,3 @@ class Inv:
 
         type = struct.unpack("<L", data[:4])[0]
         return Inv(type=type, hash=data[4:36]), data[36:]
-

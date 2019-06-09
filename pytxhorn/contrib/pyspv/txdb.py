@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import shelve
 import threading
@@ -5,7 +7,7 @@ import threading
 from contextlib import closing
 
 from .transaction import Transaction
-from .util import *
+from .util import hexstring_to_bytes, bytes_to_hexstring
 
 
 logger = logging.getLogger('default')
@@ -50,7 +52,7 @@ class TransactionDatabase:
             self.watched_block_height = txdb['watched_block_height']
 
     def has_tx(self, tx_hash):
-        with self.db_lock: # TODO - maybe this lock isn't needed
+        with self.db_lock:  # TODO - maybe this lock isn't needed
             return tx_hash in self.transaction_cache
 
     def get_tx(self, tx_hash):
@@ -72,7 +74,7 @@ class TransactionDatabase:
                 tx_hash_str = 'tx-' + bytes_to_hexstring(tx_hash)
 
                 txdb[tx_hash_str] = {
-                    'data'     : tx.serialize(),
+                    'data': tx.serialize(),
                     'in_blocks': set(),
                 }
 
@@ -80,8 +82,8 @@ class TransactionDatabase:
                     'in_blocks': set(),
                 }
 
-            #! for i, input in tx.inputs:
-            #!     self.watched_inputs ...
+            # ! for i, input in tx.inputs:
+            # !     self.watched_inputs ...
 
     def bind_tx(self, tx_hash, block_hash):
         '''associate a block with a transaction; i.e., tx was found in this block. bind_tx needs to be called on each relevent transaction
@@ -159,6 +161,5 @@ class TransactionDatabase:
 
     def on_block(self, block):
         with self.db_lock:
-            tx_hashes = [ tx.hash() for tx in block.transactions ]
+            tx_hashes = [tx.hash() for tx in block.transactions]
             self.__bind_txns((tx_hash for tx_hash in tx_hashes if tx_hash in self.transaction_cache), block.header.hash())
-

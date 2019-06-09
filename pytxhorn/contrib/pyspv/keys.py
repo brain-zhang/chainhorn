@@ -1,12 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import ctypes
 import threading
 
-from .serialize import Serialize, SerializeDataTooShort
-from .util import *
+from .serialize import SerializeDataTooShort
+from .util import bytes_to_hexstring, hexstring_to_bytes, base58_check
 
 try:
     ssl_library = ctypes.cdll.LoadLibrary('libeay32.dll')
-except:
+except Exception:
     ssl_library = ctypes.cdll.LoadLibrary('libssl.so')
 
 ssl_library.EC_KEY_new.restype = ctypes.c_void_p
@@ -17,7 +19,8 @@ CRYPTO_LOCK = 1
 NID_secp256k1 = 714
 secp256k1_order = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
 
-class PublicKey:
+
+class PublicKey(object):
     '''Also an ECC point'''
 
     def __init__(self, pubkey):
@@ -36,13 +39,13 @@ class PublicKey:
     def add_constant(self, c):
         '''this + c * generator'''
         k = ssl_library.EC_KEY_new_by_curve_name(NID_secp256k1)
-        
+
         group = ssl_library.EC_KEY_get0_group(k)
         point = ssl_library.EC_POINT_new(group)
 
         # int EC_POINT_set_affine_coordinates_GFp(const EC_GROUP *group, EC_POINT *p,
         #     const BIGNUM *x, const BIGNUM *y, BN_CTX *ctx);
-        # 
+        #
         # int EC_POINT_set_compressed_coordinates_GFp(const EC_GROUP *group, EC_POINT *p,
         #     const BIGNUM *x, int y_bit, BN_CTX *ctx);
 
@@ -53,7 +56,7 @@ class PublicKey:
 
             bignum_y_coordinate = None
 
-            r = ssl_library.EC_POINT_set_compressed_coordinates_GFp(group, point, bignum_x_coordinate, self.pubkey[0] & 0x01, None)
+            ssl_library.EC_POINT_set_compressed_coordinates_GFp(group, point, bignum_x_coordinate, self.pubkey[0] & 0x01, None)
         else:
             x_storage = ctypes.create_string_buffer(self.pubkey[1:33])
             bignum_x_coordinate = ssl_library.BN_new()
@@ -63,7 +66,7 @@ class PublicKey:
             bignum_y_coordinate = ssl_library.BN_new()
             ssl_library.BN_bin2bn(y_storage, 32, bignum_y_coordinate)
 
-            r = ssl_library.EC_POINT_set_affine_coordinates(group, point, bignum_x_coordinate, bignum_y_coordinate, None)
+            ssl_library.EC_POINT_set_affine_coordinates(group, point, bignum_x_coordinate, bignum_y_coordinate, None)
 
         # Load c into BIGNUM
         storage = ctypes.create_string_buffer(int.to_bytes(c, 32, 'big'))
@@ -100,13 +103,13 @@ class PublicKey:
 
     def multiply(self, c):
         k = ssl_library.EC_KEY_new_by_curve_name(NID_secp256k1)
-        
+
         group = ssl_library.EC_KEY_get0_group(k)
         point = ssl_library.EC_POINT_new(group)
 
         # int EC_POINT_set_affine_coordinates_GFp(const EC_GROUP *group, EC_POINT *p,
         #     const BIGNUM *x, const BIGNUM *y, BN_CTX *ctx);
-        # 
+        #
         # int EC_POINT_set_compressed_coordinates_GFp(const EC_GROUP *group, EC_POINT *p,
         #     const BIGNUM *x, int y_bit, BN_CTX *ctx);
 
@@ -117,7 +120,7 @@ class PublicKey:
 
             bignum_y_coordinate = None
 
-            r = ssl_library.EC_POINT_set_compressed_coordinates_GFp(group, point, bignum_x_coordinate, self.pubkey[0] & 0x01, None)
+            ssl_library.EC_POINT_set_compressed_coordinates_GFp(group, point, bignum_x_coordinate, self.pubkey[0] & 0x01, None)
         else:
             x_storage = ctypes.create_string_buffer(self.pubkey[1:33])
             bignum_x_coordinate = ssl_library.BN_new()
@@ -127,7 +130,7 @@ class PublicKey:
             bignum_y_coordinate = ssl_library.BN_new()
             ssl_library.BN_bin2bn(y_storage, 32, bignum_y_coordinate)
 
-            r = ssl_library.EC_POINT_set_affine_coordinates(group, point, bignum_x_coordinate, bignum_y_coordinate, None)
+            ssl_library.EC_POINT_set_affine_coordinates(group, point, bignum_x_coordinate, bignum_y_coordinate, None)
 
         # Load c into BIGNUM
         storage = ctypes.create_string_buffer(int.to_bytes(c, 32, 'big'))
@@ -185,7 +188,8 @@ class PublicKey:
         pubkey = hexstring_to_bytes(s, reverse=False)
         return PublicKey(pubkey)
 
-class PrivateKey:
+
+class PrivateKey(object):
     def __init__(self, secret):
         self.secret = secret
 
@@ -208,7 +212,7 @@ class PrivateKey:
 
     def get_public_key(self, compressed):
         k = ssl_library.EC_KEY_new_by_curve_name(NID_secp256k1)
-        
+
         storage = ctypes.create_string_buffer(self.secret)
         bignum_private_key = ssl_library.BN_new()
         ssl_library.BN_bin2bn(storage, 32, bignum_private_key)
@@ -234,7 +238,7 @@ class PrivateKey:
 
     def sign(self, hash):
         k = ssl_library.EC_KEY_new_by_curve_name(NID_secp256k1)
-        
+
         storage = ctypes.create_string_buffer(self.secret)
         bignum_private_key = ssl_library.BN_new()
         ssl_library.BN_bin2bn(storage, 32, bignum_private_key)
@@ -247,7 +251,7 @@ class PrivateKey:
         ssl_library.EC_KEY_set_public_key(k, point)
 
         assert isinstance(hash, bytes)
-        dgst = ctypes.cast((ctypes.c_ubyte*len(hash))(*[int(x) for x in hash]), ctypes.POINTER(ctypes.c_ubyte))
+        dgst = ctypes.cast((ctypes.c_ubyte * len(hash))(*[int(x) for x in hash]), ctypes.POINTER(ctypes.c_ubyte))
 
         siglen = ctypes.c_int(ssl_library.ECDSA_size(k))
         signature = ctypes.create_string_buffer(siglen.value)
@@ -265,20 +269,20 @@ class PrivateKey:
     @staticmethod
     def create_new(label=''):
         k = ssl_library.EC_KEY_new_by_curve_name(NID_secp256k1)
-    
+
         if ssl_library.EC_KEY_generate_key(k) != 1:
             raise Exception("internal error")
-    
+
         bignum_private_key = ssl_library.EC_KEY_get0_private_key(k)
-        size = (ssl_library.BN_num_bits(bignum_private_key)+7)//8
-    
+        size = (ssl_library.BN_num_bits(bignum_private_key) + 7) // 8
+
         storage = ctypes.create_string_buffer(size)
         ssl_library.BN_bn2bin(bignum_private_key, storage)
         private_key = storage.raw
-    
+
         if (len(private_key) == size) and size < 32:
             private_key = bytes([0] * (32 - size)) + private_key
-    
+
         ssl_library.EC_KEY_free(k)
 
         return PrivateKey(private_key)
@@ -298,6 +302,7 @@ openssl_locks = [threading.Lock() for _ in range(ssl_library.CRYPTO_num_locks())
 openssl_locking_function = ctypes.CFUNCTYPE(None, ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_int)
 openssl_threadid_function = ctypes.CFUNCTYPE(ctypes.c_ulong)
 
+
 @openssl_locking_function
 def openssl_lock(mode, type, file, line):
     if (mode & CRYPTO_LOCK) != 0:
@@ -305,11 +310,12 @@ def openssl_lock(mode, type, file, line):
     else:
         openssl_locks[type].release()
 
+
 @openssl_threadid_function
 def openssl_threadid():
     v = threading.current_thread().ident
     return v
 
+
 ssl_library.CRYPTO_set_id_callback(openssl_threadid)
 ssl_library.CRYPTO_set_locking_callback(openssl_lock)
-

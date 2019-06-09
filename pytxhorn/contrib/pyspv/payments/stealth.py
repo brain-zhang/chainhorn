@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import hashlib
 import logging
 
@@ -5,8 +7,13 @@ from ..keys import PublicKey, PrivateKey
 from ..transaction import TransactionOutput
 from ..wallet import InvalidAddress
 
-from ..script import *
-from ..util import *
+from ..script import Script
+from ..script import (OP_DUP,
+                      OP_HASH160,
+                      OP_CHECKSIG,
+                      OP_EQUALVERIFY,
+                      OP_RETURN)
+from ..util import base58, bytes_to_hexstring
 
 
 logger = logging.getLogger('default')
@@ -31,7 +38,7 @@ class StealthAddressPayment:
             raise InvalidAddress("Address checksum is incorrect")
 
         k = len(spv.coin.STEALTH_ADDRESS_SUFFIX_BYTES)
-        if address_bytes[-k-4:-4] != spv.coin.STEALTH_ADDRESS_SUFFIX_BYTES:
+        if address_bytes[-k - 4:-4] != spv.coin.STEALTH_ADDRESS_SUFFIX_BYTES:
             raise InvalidAddress("Address suffix is incorrect")
 
         public_key = PublicKey(address_bytes[len(spv.coin.STEALTH_ADDRESS_VERSION_BYTES):][:33])
