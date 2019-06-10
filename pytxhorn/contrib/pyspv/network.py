@@ -155,6 +155,7 @@ class Manager(threading.Thread):
             self.check_for_new_peers()
             self.manage_inventory()
 
+            # logger.debug('[FORDEV][MANAGER] all running peers:{}'.format(' '.join([str(k) +peer.state for k, peer in self.peers.items()])))
             with self.blockchain_sync_lock:
                 if self.headers_request is not None and \
                         (
@@ -180,7 +181,8 @@ class Manager(threading.Thread):
                     if len(ipport) != 2:  # no IPv6 support yet
                         continue
                     ip, _ = ipport
-                    self.add_peer_address((ip, self.spv.coin.DEFAULT_PORT))
+                    with self.peer_address_lock:
+                        self.add_peer_address((ip, self.spv.coin.DEFAULT_PORT))
             except Exception:
                 continue
 
@@ -202,9 +204,8 @@ class Manager(threading.Thread):
             'index': self.peer_index,
         }
 
-        with self.peer_address_lock:
-            self.update_peer_address(peer_address)
-            self.peer_index += 1
+        self.update_peer_address(peer_address)
+        self.peer_index += 1
 
         return True
 
@@ -308,6 +309,7 @@ class Manager(threading.Thread):
                 continue
             if not peer:
                 continue
+            logger.info('[MANAGER] found dead peer:{}'.format(peer_address))
             dead_peers.add(peer_address)
 
         with self.inv_lock:
@@ -574,13 +576,14 @@ class Peer(threading.Thread):
         logger.info("[PEER] {} Peer starting...".format(self.peer_address))
         while self.running:
             try:
+                # logger.debug("[FORDEV][PEER] {} peer step.".format(self.peer_address))
                 self.step()
             except Exception:
                 logger.warning(traceback.format_exc())
                 break
             time.sleep(0.1)
 
-        self.step()
+        self.step()  # for sync end
         logger.debug("[PEER] {} Peer exiting ({} bytes recv/{} bytes sent)...".format(self.peer_address, self.bytes_received, self.bytes_sent))
 
     def step(self):
@@ -649,6 +652,7 @@ class Peer(threading.Thread):
             logger.warning(traceback.format_exc())
 
     def handle_incoming_data(self):
+        # logger.debug("[FORDEV][PEER] {} handle incoming_data.".format(self.peer_address))
         try:
             data = self.socket.recv(4096)
             self.bytes_received += len(data)
@@ -660,7 +664,7 @@ class Peer(threading.Thread):
 
         # zero length data means we've lost connection
         if len(data) == 0:
-            logger.debug("[PEER] {} connection lost.".format(self.peer_address))
+            # logger.debug("[FORDEV][PEER] {} connection lost.".format(self.peer_address))
             self.state = 'dead'
             return
 
@@ -679,9 +683,11 @@ class Peer(threading.Thread):
             if payload is None:
                 break
 
+            # logger.debug("[FORDEV][PEER] {} handle incoming_data, command:{}".format(self.peer_address, str(command)))
             self.handle_command(command, payload)
 
     def handle_outgoing_data(self):
+        # logger.debug("[FORDEV][PEER] {} handle outgoing_data.".format(self.peer_address))
         while len(self.outgoing_data_queue) > 0:
             q = self.outgoing_data_queue.popleft()
             try:
@@ -789,6 +795,7 @@ class Peer(threading.Thread):
 
     def handle_invs(self):
         now = time.time()
+        # logger.debug('[FORDEV][PEER] {} peer handle invs'.format(self.peer_address))
 
         if len(self.inprogress_invs) > 0:
             inprogress_block_invs = [inv for inv in self.inprogress_invs if inv.type == Inv.MSG_BLOCK]
@@ -855,6 +862,7 @@ class Peer(threading.Thread):
             self.send_getdata(invs)
 
     def handle_inventory(self):
+        # logger.debug("[FORDEV][PEER] {} handle inventory.".format(self.peer_address))
         now = time.time()
 
         if len(self.requested_invs):
@@ -1096,6 +1104,7 @@ class Peer(threading.Thread):
                 self.state = 'dead'
 
         self.headers_request = None
+        logger.info("[PEER] {} received headers done, headers_request:{}".format(self.peer_address, self.headers_request))
 
     def cmd_block(self, payload):
         block, payload = Block.unserialize(payload, self.manager.spv.coin)
