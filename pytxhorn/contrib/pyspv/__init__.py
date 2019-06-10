@@ -56,11 +56,13 @@ class pyspv(object):
                  coin=Bitcoin,
                  tor=False,
                  sync_block_start=None,
+                 need_blocks=False,
                  app_datapath=None):
         self.app_name = app_name
         self.time_offset = 0
         self.time_samples = []
         self.sync_block_start = sync_block_start
+        self.need_blocks = need_blocks
 
         # Command-line arguments can override constructor args
         self.args = self.__parse_arguments()
