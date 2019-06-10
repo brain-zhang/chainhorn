@@ -164,6 +164,8 @@ class Manager(threading.Thread):
                         ):
 
                     # Misbehaving/dead peer?
+
+                    logger.debug("[FORDEV][MANAGER] {} headers request for peer dead:{}".format(self.headers_request['peer'].peer_address, str(self.headers_request)))
                     self.peer_is_bad(self.headers_request['peer'].peer_address)
                     self.headers_request['peer'].state = 'dead'
 
@@ -403,9 +405,11 @@ class Manager(threading.Thread):
 
             if self.headers_request is not None:
                 assert peer is not self.headers_request['peer'], "Don't do that"
+                logger.debug("[FORDEV][MANAGER] headers request:{}".format(str(self.headers_request)))
                 return Manager.REQUEST_WAIT
 
             if peer is self.headers_request_last_peer:
+                logger.debug("[FORDEV][MANAGER] headers request last peer:{}".format(str(self.headers_request_last_peer)))
                 return Manager.REQUEST_WAIT
 
             self.headers_request = {

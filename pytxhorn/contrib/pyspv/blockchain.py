@@ -47,7 +47,6 @@ class Blockchain(object):
 
         self.blocks = {
             self.spv.coin.GENESIS_BLOCK_HASH: genesis,
-            self.spv.coin.CHECKPOINT_BLOCK_HASH: checkpoint,
         }
 
         self.unknown_referenced_blocks = collections.defaultdict(set)
@@ -65,6 +64,11 @@ class Blockchain(object):
                     db['sync_block_start'] = self.spv.sync_block_start
 
                 self.sync_block_start = db['sync_block_start']
+
+                # make sure add checkpoint when not sync_block_start or sync_block_start > checkpoint_height
+                if self.sync_block_start is None or self.sync_block_start >= checkpoint['height']:
+                    self.blocks[self.spv.coin.CHECKPOINT_BLOCK_HASH] = checkpoint
+
                 self.best_chain = (checkpoint if (self.sync_block_start is None or self.sync_block_start >= checkpoint['height']) else genesis)
 
                 if 'blockchain' not in db or self.spv.args.resync:
@@ -164,8 +168,10 @@ class Blockchain(object):
 
             # All of the blocks must be new
             if any(block_link['hash'] in self.blocks for block_link in new_block_links):
-                logger.warning('seen some of the block headers before')
-                return False
+                for block_link in new_block_links:
+                    if (block_link['hash'] in self.blocks) and block_link['hash'] != self.spv.coin.CHECKPOINT_BLOCK_HASH:
+                        logger.warning('seen some of the block headers before:{}'.format(block_link['hash']))
+                        return False
 
             # make sure the first block connects
             prev = self.blocks.get(block_headers[0].prev_block_hash, None)
