@@ -2,17 +2,16 @@
 
 import collections
 import logging
-import shelve
 import threading
 import time
 
 from contextlib import closing
-
 from .block import Block, BlockHeader
 from .bitcoin import Bitcoin
 from .serialize import Serialize
 from .script import Script
 from .util import bytes_to_hexstring, target_to_bits, bits_to_target
+from . import shelvex as shelve
 
 logger = logging.getLogger('default')
 

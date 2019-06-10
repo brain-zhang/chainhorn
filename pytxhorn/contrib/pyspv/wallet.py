@@ -2,7 +2,6 @@
 
 import logging
 import random
-import shelve
 import threading
 import time
 
@@ -11,6 +10,7 @@ from contextlib import closing
 
 from .keys import PrivateKey
 from .util import random_coprime
+from . import shelvex as shelve
 
 
 logger = logging.getLogger('default')

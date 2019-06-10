@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import shelve
 import threading
 
 from contextlib import closing
 
 from .transaction import Transaction
 from .util import hexstring_to_bytes, bytes_to_hexstring
+from . import shelvex as shelve
 
 
 logger = logging.getLogger('default')
