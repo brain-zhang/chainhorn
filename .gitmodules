@@ -1,0 +1,3 @@
+[submodule "doc/lightning-rfc"]
+	path = doc/lightning-rfc
+	url = https://github.com/lightningnetwork/lightning-rfc.git
