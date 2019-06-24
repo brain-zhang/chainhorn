@@ -30,6 +30,9 @@ bin/pytxhorn start
 * [TODO] Python, useful for server and user applications
 * [TODO] Testnet support
 * [TODO] Extensible payment monitor and transaction building system
+* [TODO] Support for segwit
+* [TODO] Support for [BIP157](https://github.com/bitcoin/bips/blob/master/bip-0157.mediawiki)
+* [TODO] Support for [BIP158](https://github.com/bitcoin/bips/blob/master/bip-0158.mediawiki)
 * [TODO] simple mini api set compatible with [bitcore core rpc](https://bitcoincore.org/en/doc/0.18.0/)
 
 
