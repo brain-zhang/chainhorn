@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .models import TestCase
-from contrib.pyspv import pyspv
+from contrib.core import HornNode
 
 
 class BlockChainTestCase(TestCase):
@@ -10,13 +10,13 @@ class BlockChainTestCase(TestCase):
         # loading fixtures spv fake node data
         super(BlockChainTestCase, self).setUp()
 
-        spv = pyspv(app_name='pytxhorn',
-                    testnet=False,
-                    peer_goal=10,
-                    broadcast_peer_goal=10,
-                    sync_block_start=0,
-                    listen=('127.0.0.1', 5000),
-                    app_datapath=self.fixture_path,
+        spv = HornNode(app_name='pytxhorn',
+                       testnet=False,
+                       peer_goal=10,
+                       broadcast_peer_goal=10,
+                       sync_block_start=0,
+                       listen=('127.0.0.1', 5000),
+                       app_datapath=self.fixture_path,
                 )
         self.blockchain = spv.blockchain
 

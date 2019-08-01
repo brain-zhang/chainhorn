@@ -5,10 +5,10 @@ import signal
 import sys
 import threading
 
-from contrib.pyspv import pyspv
-from contrib.pyspv.util import hexstring_to_bytes
-from contrib.pyspv.bitcoin import Bitcoin
-from contrib.pyspv.transaction import Transaction
+from contrib.core import HornNode
+from contrib.core.util import hexstring_to_bytes
+from contrib.core.bitcoin import Bitcoin
+from contrib.core.transaction import Transaction
 from contrib.logging import init_logging
 from flask import Flask
 from flask import request
@@ -31,26 +31,26 @@ def shutdown_handler(signal, frame):
     sys.exit(0)
 
 
-class PyspvSingleton(pyspv):
+class HornNodeSingleton(HornNode):
     _instance_lock = threading.Lock()
 
     def __init__(self, **kwargs):
-        super(PyspvSingleton, self).__init__(**kwargs)
+        super(HornNodeSingleton, self).__init__(**kwargs)
 
     def __new__(cls, *args, **kwargs):
-        if not hasattr(PyspvSingleton, "_instance"):
-            with PyspvSingleton._instance_lock:
-                if not hasattr(PyspvSingleton, "_instance"):
-                    PyspvSingleton._instance = object.__new__(cls)
-        return PyspvSingleton._instance
+        if not hasattr(HornNodeSingleton, "_instance"):
+            with HornNodeSingleton._instance_lock:
+                if not hasattr(HornNodeSingleton, "_instance"):
+                    HornNodeSingleton._instance = object.__new__(cls)
+        return HornNodeSingleton._instance
 
 
-spv = PyspvSingleton(app_name=settings.APPNAME,
-                     testnet=settings.TESTNET,
-                     peer_goal=settings.BITCOIN_NETWORK_PEER_GOAL,
-                     broadcast_peer_goal=settings.BITCOIN_NETWORK_BROADCAST_PEER_GOAL,
-                     sync_block_start=settings.SYNC_BLOCK_START,
-                     listen=(settings.HOST_IP, settings.HOST_PORT),
+spv = HornNodeSingleton(app_name=settings.APPNAME,
+                        testnet=settings.TESTNET,
+                        peer_goal=settings.BITCOIN_NETWORK_PEER_GOAL,
+                        broadcast_peer_goal=settings.BITCOIN_NETWORK_BROADCAST_PEER_GOAL,
+                        sync_block_start=settings.SYNC_BLOCK_START,
+                        listen=(settings.HOST_IP, settings.HOST_PORT),
                     )
 
 
