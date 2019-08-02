@@ -43,6 +43,3 @@ def init_logging():
             'handlers': ['console']
         }
     })
-
-
-init_logging()

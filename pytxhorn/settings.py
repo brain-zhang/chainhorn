@@ -42,3 +42,8 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+
+# init logging module
+from contrib.logging import init_logging
+init_logging()
