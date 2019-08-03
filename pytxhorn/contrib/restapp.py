@@ -2,12 +2,12 @@
 
 import logging
 import sys
-import settings
 
 from .node import get_spv_node
-from .core.util import hexstring_to_bytes
-from .core.bitcoin import Bitcoin
-from .core.transaction import Transaction
+from .wallet import (getinfo,
+                     getnewaddress,
+                     sendrawtransaction,
+                     listspends)
 
 from flask import Flask
 from flask import request
@@ -17,7 +17,13 @@ logger = logging.getLogger('default')
 
 app = Flask(__name__)
 api = Api(app)
-spv = get_spv_node(settings)
+spv = get_spv_node()
+API_VERSION = 'v1'
+
+
+def url_version_wrapper(url):
+    wrapper_url = "/{}{}".format(API_VERSION, url)
+    return wrapper_url
 
 
 def shutdown_server():
@@ -32,37 +38,56 @@ def shutdown_handler(signal, frame):
     sys.exit(0)
 
 
-class GetAllPeers(Resource):
+class NodeGetAllPeers(Resource):
     def get(self):
         network_manager = spv.get_network_manager()
         peers = network_manager.get_peers()
-        return {'peers': list(peers.keys())}
+        return {'peers': list(peers.keys())}, 200
 
 
-class ShutDown(Resource):
+class NodeShutDown(Resource):
     def get(self):
         spv.shutdown()
-        return {'shutdown': 'ok'}
+        return {'shutdown': 'ok'}, 200
 
 
-class Start(Resource):
+class NodeStart(Resource):
     def get(self):
         spv.start()
-        return {'start': 'ok'}
+        return {'start': 'ok'}, 200
 
 
-class Broadcast(Resource):
-    def get(self, tx):
-        data = hexstring_to_bytes(tx, reverse=False)
-        txobj, _ = Transaction.unserialize(data, Bitcoin)
-        spv.broadcast_transaction(txobj)
-        return {'broadcast': 'ok'}
+class WalletGetInfo(Resource):
+    def get(self):
+        info = getinfo()
+        return {'walletinfo': info}, 200
 
 
-api.add_resource(GetAllPeers, '/peers')
-api.add_resource(ShutDown, '/shutdown')
-api.add_resource(Start, '/start')
-api.add_resource(Broadcast, '/broadcast/<string:tx>')
+class WalletBroadcastTx(Resource):
+    def post(self, tx):
+        sendrawtransaction(tx)
+        return {'broadcast': 'ok'}, 200
+
+
+class WalletGenNewAddress(Resource):
+    def post(self):
+        new_address = getnewaddress()
+        return {'new_address': new_address}, 200
+
+
+class WalletGetSpends(Resource):
+    def get(self):
+        spents = listspends()
+        return spents, 200
+
+
+api.add_resource(NodeGetAllPeers, url_version_wrapper('/node/peers'))
+api.add_resource(NodeShutDown, url_version_wrapper('/node/shutdown'))
+api.add_resource(NodeStart, url_version_wrapper('/node/start'))
+api.add_resource(WalletGetInfo, url_version_wrapper('/wallet'))
+api.add_resource(WalletGenNewAddress, url_version_wrapper('/wallet/address'))
+api.add_resource(WalletGetSpends, url_version_wrapper('/wallet/spends'))
+api.add_resource(WalletBroadcastTx, url_version_wrapper('/wallet/broadcasttx/<string:tx>'))
 
 
 def get_app():

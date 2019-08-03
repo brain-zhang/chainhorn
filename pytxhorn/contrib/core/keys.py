@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import ctypes
+import logging
 import threading
 
 from .serialize import SerializeDataTooShort
@@ -11,8 +12,18 @@ try:
 except Exception:
     ssl_library = ctypes.cdll.LoadLibrary('libssl.so')
 
-ssl_library.EC_KEY_new.restype = ctypes.c_void_p
+logger = logging.getLogger('default')
+
+def check_result(val, func, args):
+    if val == 0:
+        raise ValueError
+    else:
+        return ctypes.c_void_p(val)
+
+
+# ssl_library.EC_KEY_new.restype = ctypes.c_void_p
 ssl_library.EC_KEY_new_by_curve_name.restype = ctypes.c_void_p
+ssl_library.EC_KEY_new_by_curve_name.errcheck = check_result
 
 CRYPTO_LOCK = 1
 
