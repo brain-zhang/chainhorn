@@ -7,7 +7,8 @@ from .node import get_spv_node
 from .wallet import (getinfo,
                      getnewaddress,
                      sendrawtransaction,
-                     listspends)
+                     listspends,
+                     dumpprivkey)
 
 from flask import Flask
 from flask import request
@@ -81,12 +82,19 @@ class WalletGetSpends(Resource):
         return spents, 200
 
 
+class WalletDumpPrivkey(Resource):
+    def get(self, address):
+        key = dumpprivkey(address)
+        return key, 200
+
+
 api.add_resource(NodeGetAllPeers, url_version_wrapper('/node/peers'))
 api.add_resource(NodeShutDown, url_version_wrapper('/node/shutdown'))
 api.add_resource(NodeStart, url_version_wrapper('/node/start'))
 api.add_resource(WalletGetInfo, url_version_wrapper('/wallet'))
 api.add_resource(WalletGenNewAddress, url_version_wrapper('/wallet/address'))
 api.add_resource(WalletGetSpends, url_version_wrapper('/wallet/spends'))
+api.add_resource(WalletDumpPrivkey, url_version_wrapper('/wallet/dumpprivkey/<string:address>'))
 api.add_resource(WalletBroadcastTx, url_version_wrapper('/wallet/broadcasttx/<string:tx>'))
 
 

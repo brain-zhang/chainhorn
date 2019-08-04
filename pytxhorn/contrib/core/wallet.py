@@ -25,7 +25,18 @@ class DuplicateWalletItem(Exception):
 
 
 class Wallet:
-    '''The Wallet is responsible for managing private keys and spendable inputs'''
+    '''The Wallet is responsible for managing private keys and spendable inputs
+
+    struct:{
+                "creation_time": 0,
+                "spends": {},
+                "wallet": {
+                    "private_key": {
+                        PrivateKeyObj:{"label": "", ...}
+                    }
+                }
+           }
+    '''
     def __init__(self, spv, monitors=None):
         self.spv = spv
         self.payment_types = set()

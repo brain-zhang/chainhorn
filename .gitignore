@@ -1,5 +1,5 @@
 __pycache__
 *.pyc
 local_settings.py
-wallet.db
+*wallet.db
 *.log.*

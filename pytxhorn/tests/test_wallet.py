@@ -24,8 +24,16 @@ class WalletTestCase(TestCase):
         # loading fixtures spv fake node data
         pk = PrivateKey.create_new()
         self.spv.wallet.add('private_key', pk, {'label': ''})
-        pubkey = pk.get_public_key(compressed=True).as_address(self.spv.coin)
-        self.logger.info(pubkey)
+        address = pk.get_public_key(compressed=True).as_address(self.spv.coin)
+        self.logger.info(address)
+
+        # test wallet.add_temp
+        temp_address_metadata = self.spv.wallet.get_temp('address', address)
+        self.logger.info(temp_address_metadata)
+
+        # test wallet.add
+        private_key_metadata = self.spv.wallet.get('private_key', pk)
+        self.logger.info(private_key_metadata)
 
     def tearDown(self):
         super(TestCase, self).tearDown()

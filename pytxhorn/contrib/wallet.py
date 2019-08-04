@@ -155,7 +155,7 @@ def getnewstealthaddress(label=''):
 
 
 @exception_printer
-def getnewpubkey(label='', compressed=False):
+def getnewpubkey(label='', compressed=True):
     if str(compressed).lower() in ('1', 'true'):
         compressed = True
     else:
@@ -167,7 +167,7 @@ def getnewpubkey(label='', compressed=False):
 
 
 @exception_printer
-def listspends(include_spent=False):
+def listspends(include_spent=True):
     result = {
         'spendable': [],
         'not_spendable': [],
