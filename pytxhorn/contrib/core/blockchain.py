@@ -19,7 +19,7 @@ logger = logging.getLogger('default')
 class Blockchain(object):
     SAVED_BLOCKCHAIN_LENGTH = Bitcoin.WORK_INTERVAL * 2 * 56 * 100  # save for future 100 years
 
-    def __init__(self, spv, need_load_blocks=True):
+    def __init__(self, spv):
         assert (spv.coin.CHECKPOINT_BLOCK_HEIGHT % spv.coin.WORK_INTERVAL) == 0
 
         self.spv = spv
@@ -86,10 +86,6 @@ class Blockchain(object):
 
                 start_time = time.time()
                 logger.info("[BLOCKCHAIN] loading blockchain headers..., start:{}, count:{}".format(db['blockchain']['start'], db['blockchain']['count']))
-
-                if not need_load_blocks:
-                    logger.warning('[BLOCKCHAIN] do not load blocks, just for test or fake spv')
-                    return
 
                 for i in range(db['blockchain']['count']):
                     index = (start + i) % self.saved_blockchain_length
