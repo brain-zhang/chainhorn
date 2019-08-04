@@ -27,7 +27,7 @@ class HornNodeSingleton(HornNode):
         return HornNodeSingleton._instance
 
 
-def get_spv_node(settings=None, need_load_blocks=True):
+def get_spv_node(settings=None):
     if not settings:
         settings = default_settings
 
@@ -36,7 +36,6 @@ def get_spv_node(settings=None, need_load_blocks=True):
                             peer_goal=settings.BITCOIN_NETWORK_PEER_GOAL,
                             broadcast_peer_goal=settings.BITCOIN_NETWORK_BROADCAST_PEER_GOAL,
                             sync_block_start=settings.SYNC_BLOCK_START,
-                            need_load_blocks=need_load_blocks,
                             listen=(settings.HOST_IP, settings.HOST_PORT),
                     )
     return spv

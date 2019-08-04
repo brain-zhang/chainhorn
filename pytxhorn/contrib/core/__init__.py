@@ -57,14 +57,12 @@ class HornNode(object):
                  tor=False,
                  sync_block_start=None,
                  need_blocks=False,
-                 need_load_blocks=True,
                  app_datapath=None):
         self.app_name = app_name
         self.time_offset = 0
         self.time_samples = []
         self.sync_block_start = sync_block_start
         self.need_blocks = need_blocks
-        self.need_load_blocks = need_load_blocks
 
         # Command-line arguments can override constructor args
         self.args = self.__parse_arguments()
@@ -87,7 +85,7 @@ class HornNode(object):
 
         # It's important that the txdb be available before the wallet loads (computing balance requires knowing confirmations in the spends)
         # And the txdb requires the blockchain to be loaded
-        self.blockchain = blockchain.Blockchain(self, self.need_load_blocks)
+        self.blockchain = blockchain.Blockchain(spv=self)
         self.txdb = txdb.TransactionDatabase(spv=self)
 
         self.wallet = wallet.Wallet(spv=self,
