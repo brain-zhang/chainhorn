@@ -36,4 +36,4 @@ class WalletTestCase(TestCase):
         self.logger.info(private_key_metadata)
 
     def tearDown(self):
-        super(TestCase, self).tearDown()
+        super(WalletTestCase, self).tearDown()

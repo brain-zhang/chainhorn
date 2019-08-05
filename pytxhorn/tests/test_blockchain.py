@@ -51,4 +51,4 @@ class BlockChainTestCase(TestCase):
         self.assertListEqual(locator_hashes, best_chain_locator.get_hashes())
 
     def tearDown(self):
-        super(TestCase, self).tearDown()
+        super(BlockChainTestCase, self).tearDown()
