@@ -12,12 +12,12 @@ class WalletTestCase(TestCase):
         super(WalletTestCase, self).setUp()
 
         self.spv = HornNode(app_name='pytxhorn',
-                            testnet=False,
+                            testnet=True,
                             peer_goal=10,
                             broadcast_peer_goal=10,
                             sync_block_start=0,
-                            listen=('127.0.0.1', 5000),
-                            app_datapath=self.fixture_path,
+                            listen=('127.0.0.1', 15000),
+                            app_datapath=self.temp_fixture_path,
                 )
 
     def test_gen_new_address(self):

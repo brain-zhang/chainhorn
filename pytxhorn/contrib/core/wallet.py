@@ -205,6 +205,9 @@ class Wallet:
 
             return collection[item]
 
+    def get_temp_collections(self):
+        return self.temp_collections
+
     def add_spend(self, spend):
         with self.wallet_lock:
             with closing(shelve.open(self.wallet_file)) as d:
