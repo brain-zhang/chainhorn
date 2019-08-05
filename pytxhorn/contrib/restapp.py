@@ -41,7 +41,7 @@ def shutdown_handler(signal, frame):
 
 class NodeGetInfo(Resource):
     def get(self):
-        info = spv.get_info()
+        info = spv.getinfo()
         return {'nodeinfo': info}, 200
 
 
