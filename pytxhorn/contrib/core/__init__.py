@@ -95,7 +95,12 @@ class HornNode(object):
                                     )
         self.wallet.load()
 
-        self.network_manager = network.Manager(spv=self, peer_goal=peer_goal, broadcast_peer_goal=broadcast_peer_goal, listen=listen, tor=tor, user_agent=VERSION)
+        self.network_manager = network.Manager(spv=self,
+                                               peer_goal=peer_goal,
+                                               broadcast_peer_goal=broadcast_peer_goal,
+                                               listen=listen,
+                                               tor=tor,
+                                               user_agent=VERSION)
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser()
@@ -124,6 +129,17 @@ class HornNode(object):
             args.torproxy = ('127.0.0.1', 9050)
 
         return args
+
+    def getinfo(self):
+        return {
+            'blocks': self.blockchain.best_chain['height'],
+            'version': VERSION,
+            'platform': sys.platform,
+            'python': sys.version,
+            'user-agent': self.network_manager.user_agent,
+            'app-name': self.app_name,
+            'testnet': self.testnet,
+        }
 
     def start(self):
         self.network_manager.start()

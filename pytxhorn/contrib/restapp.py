@@ -39,6 +39,12 @@ def shutdown_handler(signal, frame):
     sys.exit(0)
 
 
+class NodeGetInfo(Resource):
+    def get(self):
+        info = spv.get_info()
+        return {'nodeinfo': info}, 200
+
+
 class NodeGetAllPeers(Resource):
     def get(self):
         network_manager = spv.get_network_manager()
@@ -88,6 +94,7 @@ class WalletDumpPrivkey(Resource):
         return key, 200
 
 
+api.add_resource(NodeGetInfo, url_version_wrapper('/node'))
 api.add_resource(NodeGetAllPeers, url_version_wrapper('/node/peers'))
 api.add_resource(NodeShutDown, url_version_wrapper('/node/shutdown'))
 api.add_resource(NodeStart, url_version_wrapper('/node/start'))

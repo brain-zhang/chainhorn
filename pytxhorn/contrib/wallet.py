@@ -35,16 +35,12 @@ def exception_printer(f):
 
 @exception_printer
 def getinfo():
+    addresses = spv.wallet.get_temp_collections().get('address', {})
+    addresses = addresses.keys()
     return {
         'balance': spv.coin.format_money(sum(v for v in spv.wallet.balance.values())),
-        'blocks': spv.blockchain.best_chain['height'],
-        'version': VERSION,
-        'platform': sys.platform,
-        'python': sys.version,
-        'user-agent': '',
-        'app-name': spv.app_name,
-        'testnet': spv.testnet,
         'coin': spv.coin.__name__,
+        'address': addresses
     }
 
 
