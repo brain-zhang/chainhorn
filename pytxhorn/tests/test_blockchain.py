@@ -16,7 +16,7 @@ class BlockChainTestCase(TestCase):
                        broadcast_peer_goal=10,
                        sync_block_start=0,
                        listen=('127.0.0.1', 5000),
-                       app_datapath=self.fixture_path,
+                       app_datapath=self.temp_fixture_path,
                 )
         self.blockchain = spv.blockchain
 
