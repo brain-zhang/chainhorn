@@ -8,16 +8,20 @@ from .wallet import (getinfo,
                      getnewaddress,
                      sendrawtransaction,
                      listspends,
+                     sendtoaddress,
                      dumpprivkey)
 
 from flask import Flask
 from flask import request
 from flask_restful import Resource, Api
+from flask.ext.restful import reqparse
+
 
 logger = logging.getLogger('default')
 
 app = Flask(__name__)
 api = Api(app)
+parser = reqparse.RequestParser()
 spv = get_spv_node()
 API_VERSION = 'v1'
 
@@ -88,6 +92,16 @@ class WalletGetSpends(Resource):
         return spents, 200
 
 
+class WalletSendtoAddress(Resource):
+    def post(self):
+        parser.add_argument('address', type=str, help='sendto address')
+        parser.add_argument('amount', type=int, help='send amount satoshi unit')
+        args = parser.parse_args()
+        address = args['address']
+        amount = args['amount']
+        return sendtoaddress(address, amount), 200
+
+
 class WalletDumpPrivkey(Resource):
     def get(self, address):
         key = dumpprivkey(address)
@@ -101,6 +115,7 @@ api.add_resource(NodeStart, url_version_wrapper('/node/start'))
 api.add_resource(WalletGetInfo, url_version_wrapper('/wallet'))
 api.add_resource(WalletGenNewAddress, url_version_wrapper('/wallet/address'))
 api.add_resource(WalletGetSpends, url_version_wrapper('/wallet/spends'))
+api.add_resource(WalletSendtoAddress, url_version_wrapper('/wallet/sendtoaddress'))
 api.add_resource(WalletDumpPrivkey, url_version_wrapper('/wallet/dumpprivkey/<string:address>'))
 api.add_resource(WalletBroadcastTx, url_version_wrapper('/wallet/broadcasttx/<string:tx>'))
 
