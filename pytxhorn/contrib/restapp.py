@@ -70,25 +70,25 @@ class NodeStart(Resource):
 
 class WalletGetInfo(Resource):
     def get(self):
-        info = getinfo()
+        info = getinfo(spv)
         return {'walletinfo': info}, 200
 
 
 class WalletBroadcastTx(Resource):
     def post(self, tx):
-        sendrawtransaction(tx)
+        sendrawtransaction(spv, tx)
         return {'broadcast': 'ok'}, 200
 
 
 class WalletGenNewAddress(Resource):
     def post(self):
-        new_address = getnewaddress()
+        new_address = getnewaddress(spv)
         return {'new_address': new_address}, 200
 
 
 class WalletGetSpends(Resource):
     def get(self):
-        spents = listspends()
+        spents = listspends(spv)
         return spents, 200
 
 

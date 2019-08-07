@@ -16,6 +16,7 @@ import settings
 import logging
 import pprint
 from contrib.core import HornNode
+from contrib.wallet import listspends
 from docopt import docopt
 
 logger = logging.getLogger('default')
@@ -42,3 +43,7 @@ if __name__ == '__main__':
     wallet_raw_spends_info = wallet.get_raw_spends()
     wallet_raw_spends_info = "\r\n{}".format(pp.pformat(wallet_raw_spends_info))
     logger.info(wallet_raw_spends_info)
+
+    wallet_spends = listspends(spv)
+    wallet_spends = "\r\n{}".format(pp.pformat(wallet_spends))
+    logger.info(wallet_spends)

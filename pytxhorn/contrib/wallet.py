@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import sys
-import traceback
 
 from . import core as horncore
-from .node import get_spv_node
-from .core import VERSION, base58
+from .utils import exception_printer
+from .core import base58
 from .core.keys import PrivateKey, PublicKey
 from .core.payments.stealth import StealthAddressPayment
 from .core.payments.pubkey import PubKeyPayment, PubKeyChange
@@ -17,24 +15,11 @@ from .core.transaction import Transaction
 from .core.util import hexstring_to_bytes, bytes_to_hexstring, base58_check
 from .core.wallet import DuplicateWalletItem
 
-spv = get_spv_node()
 logger = logging.getLogger('default')
 
 
-def exception_printer(f):
-    def f2(*args, **kwargs):
-        nonlocal f
-        try:
-            return f(*args, **kwargs)
-        except Exception:
-            logger.info(traceback.format_exc())
-            return traceback.format_exc()
-    f2.__name__ = f.__name__
-    return f2
-
-
 @exception_printer
-def getinfo():
+def getinfo(spv):
     addresses = spv.wallet.get_temp_collections().get('address', {})
     addresses = list(addresses.keys())
     return {
@@ -84,7 +69,7 @@ def get_output_producer(spv, address, amount):
 
 
 @exception_printer
-def sendtoaddress(address, amount, memo=''):
+def sendtoaddress(spv, address, amount, memo=''):
     transaction_builder = spv.new_transaction_builder(memo=memo)
     transaction_builder.process_change(PubKeyChange)
     transaction_builder.process(get_output_producer(spv, address, spv.coin.parse_money(amount)))
@@ -102,7 +87,7 @@ def sendtoaddress(address, amount, memo=''):
 
 
 @exception_printer
-def sendspendtoaddress(spend_hash, address, amount, memo=''):
+def sendspendtoaddress(spv, spend_hash, address, amount, memo=''):
     spend_hash = hexstring_to_bytes(spend_hash)
     transaction_builder = spv.new_transaction_builder(memo=memo)
     transaction_builder.include_spend(spend_hash)
@@ -122,12 +107,12 @@ def sendspendtoaddress(spend_hash, address, amount, memo=''):
 
 
 @exception_printer
-def getbalance():
+def getbalance(spv):
     return dict((k, spv.coin.format_money(v)) for k, v in spv.wallet.balance.items())
 
 
 @exception_printer
-def getnewaddress(label='', compressed=True):
+def getnewaddress(spv, label='', compressed=True):
     if str(compressed).lower() in ('1', 'true'):
         compressed = True
     else:
@@ -141,7 +126,7 @@ def getnewaddress(label='', compressed=True):
 
 
 @exception_printer
-def getnewstealthaddress(label=''):
+def getnewstealthaddress(spv, label=''):
     pk = PrivateKey.create_new()
     spv.wallet.add('private_key', pk, {'label': label, 'stealth_payments': True})
     return base58_check(spv.coin,
@@ -151,7 +136,7 @@ def getnewstealthaddress(label=''):
 
 
 @exception_printer
-def getnewpubkey(label='', compressed=True):
+def getnewpubkey(spv, label='', compressed=True):
     if str(compressed).lower() in ('1', 'true'):
         compressed = True
     else:
@@ -163,7 +148,7 @@ def getnewpubkey(label='', compressed=True):
 
 
 @exception_printer
-def listspends(include_spent=True):
+def listspends(spv, include_spent=True):
     result = {
         'spendable': [],
         'not_spendable': [],
@@ -207,13 +192,14 @@ def listspends(include_spent=True):
             # str(spend['spend']) + ', confirmations={}'.format(spend['spend'].get_confirmations(spv)))
             result['not_spendable'].append(f(spend['spend']))
 
+    # logger.info('Spendable:\n' + str(result['spendable']) +
+    #             '\nNot Spendable ({} confirmations required):\n'.format(spv.coin.TRANSACTION_CONFIRMATION_DEPTH) +
+    #             str(result['not_spendable']))
     return result
-    # return 'Spendable:\n' + '\n'.join(spendable) + '\nNot Spendable ({} confirmations required):\n'.format(
-    #        spv.coin.TRANSACTION_CONFIRMATION_DEPTH) + '\n'.join(not_spendable)
 
 
 @exception_printer
-def dumppubkey(address):
+def dumppubkey(spv, address):
     '''PubKeyPaymentMonitor has to be included for this to work'''
     metadata = spv.wallet.get_temp('address', address)
     if metadata is None:
@@ -223,7 +209,7 @@ def dumppubkey(address):
 
 
 @exception_printer
-def dumpprivkey(address_or_pubkey):
+def dumpprivkey(spv, address_or_pubkey):
     '''PubKeyPaymentMonitor has to be included for this to work'''
     metadata = spv.wallet.get_temp('address', address_or_pubkey)
     if metadata is not None:
@@ -238,7 +224,7 @@ def dumpprivkey(address_or_pubkey):
 
 
 @exception_printer
-def genmultisig(nreq, mtotal, *pubkeys):
+def genmultisig(spv, nreq, mtotal, *pubkeys):
     '''Generate a new multisignature address and redemption script
     that requires `nreq' signatures to spend and provides a possible `mtotal'.
     If public keys are provided on the command line,
@@ -293,7 +279,7 @@ def genmultisig(nreq, mtotal, *pubkeys):
 
 
 @exception_printer
-def sendrawtransaction(tx_bytes):
+def sendrawtransaction(spv, tx_bytes):
     tx_bytes = hexstring_to_bytes(tx_bytes, reverse=False)
     tx, _ = Transaction.unserialize(tx_bytes, spv.coin)
     spv.broadcast_transaction(tx)

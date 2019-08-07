@@ -86,7 +86,7 @@ class TransactionDatabase:
             # !     self.watched_inputs ...
 
     def bind_tx(self, tx_hash, block_hash):
-        '''associate a block with a transaction; i.e., tx was found in this block. bind_tx needs to be called on each relevent transaction
+        '''associate a block with a transaction; i.e., tx was found in this block. bind_tx needs to be called on each relevant transaction
         before any calls to on_block_added'''
         with self.db_lock:
             if tx_hash not in self.transaction_cache:
