@@ -118,7 +118,7 @@ class WalletSendSpendtoAddress(Resource):
 
 class WalletDumpPrivkey(Resource):
     def get(self, address):
-        key = dumpprivkey(address)
+        key = dumpprivkey(spv, address)
         return key, 200
 
 
@@ -130,6 +130,7 @@ api.add_resource(WalletGetInfo, url_version_wrapper('/wallet'))
 api.add_resource(WalletGenNewAddress, url_version_wrapper('/wallet/address'))
 api.add_resource(WalletGetSpends, url_version_wrapper('/wallet/spends'))
 api.add_resource(WalletSendtoAddress, url_version_wrapper('/wallet/sendtoaddress'))
+api.add_resource(WalletSendSpendtoAddress, url_version_wrapper('/wallet/sendspendtoaddress'))
 api.add_resource(WalletDumpPrivkey, url_version_wrapper('/wallet/dumpprivkey/<string:address>'))
 api.add_resource(WalletBroadcastTx, url_version_wrapper('/wallet/broadcasttx/<string:tx>'))
 

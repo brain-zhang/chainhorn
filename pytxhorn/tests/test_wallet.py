@@ -2,13 +2,14 @@ from .models import TestCase
 from contrib.core import HornNode
 from contrib.core.keys import PrivateKey
 from contrib.wallet import sendspendtoaddress
+from contrib.core.util import bytes_to_hexstring
 
 
-class WalletTestCase(TestCase):
+class WalletTestnetTestCase(TestCase):
 
     def setUp(self):
         # loading fixtures spv fake node data
-        super(WalletTestCase, self).setUp()
+        super(WalletTestnetTestCase, self).setUp()
 
         self.spv = HornNode(app_name='pytxhorn',
                             testnet=True,
@@ -33,6 +34,7 @@ class WalletTestCase(TestCase):
         # test wallet.add
         private_key_metadata = self.spv.wallet.get('private_key', pk)
         self.logger.info(private_key_metadata)
+        self.logger.info(pk.as_wif(self.spv.coin, True))
 
     def test_get_temp_collections(self):
         addresses = [
@@ -59,4 +61,30 @@ class WalletTestCase(TestCase):
         self.logger.info(result)
 
     def tearDown(self):
-        super(WalletTestCase, self).tearDown()
+        super(WalletTestnetTestCase, self).tearDown()
+
+
+class WalletMainNetTestCase(TestCase):
+
+    def setUp(self):
+        # loading fixtures spv fake node data
+        super(WalletMainNetTestCase, self).setUp()
+
+        self.spv = HornNode(app_name='pytxhorn',
+                            testnet=False,
+                            peer_goal=10,
+                            broadcast_peer_goal=10,
+                            sync_block_start=0,
+                            listen=('127.0.0.1', 15000),
+                            app_datapath=self.temp_fixture_path,
+                )
+
+    def test_import_wif(self):
+        # loading fixtures spv fake node data
+        wif = 'KwLfcF1w7X9Hi79viRJJzAc5iqFhxGwPW73bwjGQ5HZ1VZb5SPst'
+        pk = PrivateKey.import_wif(wif)
+        self.spv.wallet.add('private_key', pk, {'label': ''})
+        address = pk.get_public_key(compressed=True).as_address(self.spv.coin)
+        self.assertEqual(address, '1875pogmBxMzeYFxt3s9QED8xDGXnc71W3')
+        self.assertEqual(bytes_to_hexstring(pk.secret, reverse=False),
+                         '039405f36260764a8fabab122a802244580769cc88c8a2b6ff3b5af63b99a960')
