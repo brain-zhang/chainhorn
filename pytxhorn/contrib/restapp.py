@@ -14,7 +14,7 @@ from .wallet import (getinfo,
 from flask import Flask
 from flask import request
 from flask_restful import Resource, Api
-from flask.ext.restful import reqparse
+from flask_restful import reqparse
 
 
 logger = logging.getLogger('default')
@@ -95,7 +95,7 @@ class WalletGetSpends(Resource):
 class WalletSendtoAddress(Resource):
     def post(self):
         parser.add_argument('address', type=str, help='sendto address')
-        parser.add_argument('amount', type=int, help='send amount satoshi unit')
+        parser.add_argument('amount', type=str, help='send amount with 1B unit')
         args = parser.parse_args()
         address = args['address']
         amount = args['amount']

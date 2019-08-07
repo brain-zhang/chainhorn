@@ -49,7 +49,8 @@ class WalletTestCase(TestCase):
 
         collections = self.spv.wallet.get_temp_collections()
         wallet_address = list(collections['address'].keys())
-        self.assertListEqual(sorted(addresses), sorted(wallet_address))
+        for address in addresses:
+            self.assertIn(address, wallet_address)
 
     def tearDown(self):
         super(WalletTestCase, self).tearDown()

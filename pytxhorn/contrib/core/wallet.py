@@ -36,6 +36,14 @@ class Wallet:
                     }
                 }
            }
+    temp_struct: {
+                "public_key": {
+                    PublicKeyObj: {"private_key": PrivateKeyObj},
+                },
+                "address": {
+                    address_str: {"public_key": PublicKeyObj}
+                }
+    }
     '''
     def __init__(self, spv, monitors=None):
         self.spv = spv
@@ -207,6 +215,12 @@ class Wallet:
 
     def get_temp_collections(self):
         return self.temp_collections
+
+    def get_raw_spends(self):
+        with self.wallet_lock:
+            with closing(shelve.open(self.wallet_file)) as d:
+                spends = d.get('spends', {})
+        return spends
 
     def add_spend(self, spend):
         with self.wallet_lock:

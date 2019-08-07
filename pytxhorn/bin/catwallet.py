@@ -32,9 +32,13 @@ if __name__ == '__main__':
                    app_datapath=datapath,
                 )
 
-    wallet = spv.wallet
-    wallet_temp_info = wallet.get_temp_collections()
-
     pp = pprint.PrettyPrinter(indent=4)
+    wallet = spv.wallet
+
+    wallet_temp_info = wallet.get_temp_collections()
     wallet_temp_info = "\r\n{}".format(pp.pformat(wallet_temp_info))
     logger.info(wallet_temp_info)
+
+    wallet_raw_spends_info = wallet.get_raw_spends()
+    wallet_raw_spends_info = "\r\n{}".format(pp.pformat(wallet_raw_spends_info))
+    logger.info(wallet_raw_spends_info)
