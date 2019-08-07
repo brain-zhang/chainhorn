@@ -9,6 +9,7 @@ from .wallet import (getinfo,
                      sendrawtransaction,
                      listspends,
                      sendtoaddress,
+                     sendspendtoaddress,
                      dumpprivkey)
 
 from flask import Flask
@@ -21,7 +22,6 @@ logger = logging.getLogger('default')
 
 app = Flask(__name__)
 api = Api(app)
-parser = reqparse.RequestParser()
 spv = get_spv_node()
 API_VERSION = 'v1'
 
@@ -94,12 +94,26 @@ class WalletGetSpends(Resource):
 
 class WalletSendtoAddress(Resource):
     def post(self):
+        parser = reqparse.RequestParser()
         parser.add_argument('address', type=str, help='sendto address')
         parser.add_argument('amount', type=str, help='send amount with 1B unit')
         args = parser.parse_args()
         address = args['address']
         amount = args['amount']
-        return sendtoaddress(address, amount), 200
+        return sendtoaddress(spv, address, amount), 200
+
+
+class WalletSendSpendtoAddress(Resource):
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('spendhash', type=str, help='send spend to address')
+        parser.add_argument('address', type=str, help='send spend to address')
+        parser.add_argument('amount', type=str, help='send amount with 1B unit')
+        args = parser.parse_args()
+        spendhash = args['spendhash']
+        address = args['address']
+        amount = args['amount']
+        return sendspendtoaddress(spv, spendhash, address, amount), 200
 
 
 class WalletDumpPrivkey(Resource):

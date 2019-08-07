@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-
 from .models import TestCase
 from contrib.core import HornNode
 from contrib.core.keys import PrivateKey
+from contrib.wallet import sendspendtoaddress
 
 
 class WalletTestCase(TestCase):
@@ -51,6 +50,13 @@ class WalletTestCase(TestCase):
         wallet_address = list(collections['address'].keys())
         for address in addresses:
             self.assertIn(address, wallet_address)
+
+    def test_spend_sent(self):
+        spendhash = '33e075e7b5099d57550a74e3300aa7586f59d96007e4b847a178beaf8ec40da4'
+        address = '2NGZrVvZG92qGYqzTLjCAewvPZ7JE8S8VxE'
+        amount = '0.0009'
+        result = sendspendtoaddress(self.spv, spendhash, address, amount)
+        self.logger.info(result)
 
     def tearDown(self):
         super(WalletTestCase, self).tearDown()
