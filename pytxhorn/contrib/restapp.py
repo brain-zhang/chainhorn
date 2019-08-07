@@ -57,13 +57,13 @@ class NodeGetAllPeers(Resource):
 
 
 class NodeShutDown(Resource):
-    def get(self):
+    def put(self):
         spv.shutdown()
         return {'shutdown': 'ok'}, 200
 
 
 class NodeStart(Resource):
-    def get(self):
+    def put(self):
         spv.start()
         return {'start': 'ok'}, 200
 
