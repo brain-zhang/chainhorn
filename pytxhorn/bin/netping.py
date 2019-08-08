@@ -3,7 +3,6 @@
 import requests
 import re
 import socket
-import time
 
 
 def get_external_ip():
@@ -14,7 +13,7 @@ def get_external_ip():
     response = requests.get(check_ip_url).text
 
     # Filter the response with a regex for an IPv4 address
-    ip = re.search('(?:[0-9]{1,3}\.){3}[0-9]{1,3}', response).group()
+    ip = re.search("(?:[0-9]{1,3}.){3}[0-9]{1,3}", response).group()
     return ip
 
 
@@ -45,13 +44,14 @@ def get_node_addresses():
     except Exception:
         return found_peers
 
+
 # Connect to the first responding peer from our dns list
 def connect(peer):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         try:
             print("Trying to connect to ", peer)
             # Try to establish the connection
-            err = sock.connect(peer)
+            sock.connect(peer)
             return peer
         except Exception:
             # Somehow the peer did not respond, test the next index

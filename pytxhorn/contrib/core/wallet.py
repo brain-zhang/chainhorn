@@ -25,7 +25,26 @@ class DuplicateWalletItem(Exception):
 
 
 class Wallet:
-    '''The Wallet is responsible for managing private keys and spendable inputs'''
+    '''The Wallet is responsible for managing private keys and spendable inputs
+
+    struct:{
+                "creation_time": 0,
+                "spends": {},
+                "wallet": {
+                    "private_key": {
+                        PrivateKeyObj:{"label": "", ...}
+                    }
+                }
+           }
+    temp_struct: {
+                "public_key": {
+                    PublicKeyObj: {"private_key": PrivateKeyObj},
+                },
+                "address": {
+                    address_str: {"public_key": PublicKeyObj}
+                }
+    }
+    '''
     def __init__(self, spv, monitors=None):
         self.spv = spv
         self.payment_types = set()
@@ -193,6 +212,15 @@ class Wallet:
                 return None
 
             return collection[item]
+
+    def get_temp_collections(self):
+        return self.temp_collections
+
+    def get_raw_spends(self):
+        with self.wallet_lock:
+            with closing(shelve.open(self.wallet_file)) as d:
+                spends = d.get('spends', {})
+        return spends
 
     def add_spend(self, spend):
         with self.wallet_lock:

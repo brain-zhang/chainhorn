@@ -20,13 +20,13 @@ from .monitors.stealth import StealthAddressPaymentMonitor
 from .util import Config
 
 
-VERSION = 'pyspv 0.0.1-alpha1'
-VERSION_NUMBER = 0x00000101
+VERSION = 'pytxhorn 0.03'
+VERSION_NUMBER = 0x0000011
 
 logger = logging.getLogger('default')
 
 
-class pyspv(object):
+class HornNode(object):
     '''SPV encapsulation class.  One instance of this class is enough to manage a wallet, transactions,
     network. blockchain, etc.
 
@@ -81,7 +81,7 @@ class pyspv(object):
 
         self.config = Config(app_name, self.coin, testnet=testnet, app_datapath=app_datapath)
 
-        logger.info('[PYSPV] app data at {}'.format(self.config.path))
+        logger.info('[CoreNode] app data at {}'.format(self.config.path))
 
         # It's important that the txdb be available before the wallet loads (computing balance requires knowing confirmations in the spends)
         # And the txdb requires the blockchain to be loaded
@@ -95,7 +95,12 @@ class pyspv(object):
                                     )
         self.wallet.load()
 
-        self.network_manager = network.Manager(spv=self, peer_goal=peer_goal, broadcast_peer_goal=broadcast_peer_goal, listen=listen, tor=tor, user_agent=VERSION)
+        self.network_manager = network.Manager(spv=self,
+                                               peer_goal=peer_goal,
+                                               broadcast_peer_goal=broadcast_peer_goal,
+                                               listen=listen,
+                                               tor=tor,
+                                               user_agent=VERSION)
 
     def __parse_arguments(self):
         parser = argparse.ArgumentParser()
@@ -125,6 +130,17 @@ class pyspv(object):
 
         return args
 
+    def getinfo(self):
+        return {
+            'blocks': self.blockchain.best_chain['height'],
+            'version': VERSION,
+            'platform': sys.platform,
+            'python': sys.version,
+            'user-agent': self.network_manager.user_agent,
+            'app-name': self.app_name,
+            'testnet': self.testnet,
+        }
+
     def start(self):
         self.network_manager.start()
 
@@ -134,11 +150,11 @@ class pyspv(object):
     def shutdown(self):
         '''Initiate asynchronous shutdown.  This peacefully disconnects from network peers and saves all necessary data.
 
-        After calling :py:meth:`~pyspv.shutdown`, you may call :py:meth:`~pyspv.join` to block on shutdown.'''
+        After calling :py:meth:`~corenode.shutdown`, you may call :py:meth:`~corenode.join` to block on shutdown.'''
         self.network_manager.shutdown()
 
     def join(self):
-        '''Block until shutdown is complete.  If :py:meth:`~pyspv.shutdown` hasn't been called yet, this function will block forever.'''
+        '''Block until shutdown is complete.  If :py:meth:`~corenode.shutdown` hasn't been called yet, this function will block forever.'''
         self.network_manager.join()
 
     def adjusted_time(self):
@@ -156,7 +172,7 @@ class pyspv(object):
         if len(self.time_samples) >= 5 and (len(self.time_samples) % 2) == 1:
             m = list(sorted(self.time_samples))[(len(self.time_samples) // 2) + 1]
             if abs(m) < 70 * 60:
-                logger.debug('[PYSPV] peer time offset = {} sec'.format(m))
+                logger.debug('[HornNode] peer time offset = {} sec'.format(m))
                 self.time_offset = m
             else:
                 # TODO - we should inform the app that we can't get good time data
@@ -166,7 +182,7 @@ class pyspv(object):
         '''Creates a new transaction builder.
 
         :param memo: TODO
-        :returns: Returns a new :py:class:`pyspv.transactionbuilder.TransactionBuilder`
+        :returns: Returns a new :py:class:`hornnode.transactionbuilder.TransactionBuilder`
         '''
         return transactionbuilder.TransactionBuilder(self, memo=memo)
 
@@ -185,14 +201,14 @@ class pyspv(object):
     def on_tx(self, tx):
         '''Called for every transaction seen on the network, not including those found in blocks.
 
-        If you override this method, be sure to call :py:meth:`pyspv.on_tx`. Otherwise, the wallet will not see any payments.'''
+        If you override this method, be sure to call :py:meth:`HornNode.on_tx`. Otherwise, the wallet will not see any payments.'''
         self.wallet.on_tx(tx)
         self.txdb.on_tx(tx)
 
     def on_block(self, block):
         '''Called for every block seen on the network, whether it ends up part of the blockchain or not.
 
-        If you override this method, be sure to call :py:meth:`pyspv.on_block`.  Otherwise, the wallet will not see payments in this block.
+        If you override this method, be sure to call :py:meth:`HornNode.on_block`.  Otherwise, the wallet will not see payments in this block.
 
         .. note::
 
@@ -204,7 +220,7 @@ class pyspv(object):
     def on_block_added(self, block_header, block_height):
         '''Called when the blockchain is extended to a height of *block_height* with the block specified by *block_header*.
 
-        If you override this method, you must call :py:meth:`pyspv.on_block_added`, otherwise the transaction database
+        If you override this method, you must call :py:meth:`HornNode.on_block_added`, otherwise the transaction database
         will not function properly.
 
         .. note::
@@ -217,7 +233,7 @@ class pyspv(object):
     def on_block_removed(self, block_header, block_height):
         '''Called when the blockchain is reduced from a height of *block_height* by removing the block specified by *block_header*.
 
-        If you override this method, you must call :py:meth:`pyspv.on_block_removed`, otherwise the transaction database
+        If you override this method, you must call :py:meth:`HornNode.on_block_removed`, otherwise the transaction database
         will not function properly.
         '''
         self.txdb.on_block_removed(block_header, block_height)

@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import binascii
 import ctypes
+import logging
 import threading
 
+from .base58 import b58decode
 from .serialize import SerializeDataTooShort
 from .util import bytes_to_hexstring, hexstring_to_bytes, base58_check
 
@@ -11,13 +14,25 @@ try:
 except Exception:
     ssl_library = ctypes.cdll.LoadLibrary('libssl.so')
 
-ssl_library.EC_KEY_new.restype = ctypes.c_void_p
+logger = logging.getLogger('default')
+
+
+def check_result(val, func, args):
+    if val == 0:
+        raise ValueError
+    else:
+        return ctypes.c_void_p(val)
+
+
+# ssl_library.EC_KEY_new.restype = ctypes.c_void_p
 ssl_library.EC_KEY_new_by_curve_name.restype = ctypes.c_void_p
+ssl_library.EC_KEY_new_by_curve_name.errcheck = check_result
 
 CRYPTO_LOCK = 1
 
 NID_secp256k1 = 714
 secp256k1_order = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+ENDIAN_ORDER = 'big'
 
 
 class PublicKey(object):
@@ -28,7 +43,7 @@ class PublicKey(object):
         self.pubkey = pubkey
 
     def __hash__(self):
-        return int.from_bytes(self.pubkey, 'big')
+        return int.from_bytes(self.pubkey, ENDIAN_ORDER)
 
     def __eq__(self, other):
         return self is other or (self.pubkey == other.pubkey)
@@ -69,12 +84,12 @@ class PublicKey(object):
             ssl_library.EC_POINT_set_affine_coordinates(group, point, bignum_x_coordinate, bignum_y_coordinate, None)
 
         # Load c into BIGNUM
-        storage = ctypes.create_string_buffer(int.to_bytes(c, 32, 'big'))
+        storage = ctypes.create_string_buffer(int.to_bytes(c, 32, ENDIAN_ORDER))
         bignum_c = ssl_library.BN_new()
         ssl_library.BN_bin2bn(storage, 32, bignum_c)
 
         # Load 1 into BIGNUM
-        storage_one = ctypes.create_string_buffer(int.to_bytes(1, 32, 'big'))
+        storage_one = ctypes.create_string_buffer(int.to_bytes(1, 32, ENDIAN_ORDER))
         bignum_one = ssl_library.BN_new()
         ssl_library.BN_bin2bn(storage_one, 32, bignum_one)
 
@@ -133,7 +148,7 @@ class PublicKey(object):
             ssl_library.EC_POINT_set_affine_coordinates(group, point, bignum_x_coordinate, bignum_y_coordinate, None)
 
         # Load c into BIGNUM
-        storage = ctypes.create_string_buffer(int.to_bytes(c, 32, 'big'))
+        storage = ctypes.create_string_buffer(int.to_bytes(c, 32, ENDIAN_ORDER))
         bignum_c = ssl_library.BN_new()
         ssl_library.BN_bin2bn(storage, 32, bignum_c)
 
@@ -194,7 +209,7 @@ class PrivateKey(object):
         self.secret = secret
 
     def __hash__(self):
-        return int.from_bytes(self.secret, 'big')
+        return int.from_bytes(self.secret, ENDIAN_ORDER)
 
     def __eq__(self, other):
         return self is other or (self.__class__ is other.__class__ and self.secret == other.secret)
@@ -204,13 +219,13 @@ class PrivateKey(object):
         return base58_check(coin, self.secret + (b'\x01' if compressed else b''), version_bytes=coin.PRIVATE_KEY_VERSION_BYTES)
 
     def as_int(self):
-        return int.from_bytes(self.secret, 'big')
+        return int.from_bytes(self.secret, ENDIAN_ORDER)
 
     def add_constant(self, c):
-        r = (int.from_bytes(self.secret, 'big') + c) % secp256k1_order
-        return PrivateKey(int.to_bytes(r, 32, 'big'))
+        r = (int.from_bytes(self.secret, ENDIAN_ORDER) + c) % secp256k1_order
+        return PrivateKey(int.to_bytes(r, 32, ENDIAN_ORDER))
 
-    def get_public_key(self, compressed):
+    def get_public_key(self, compressed=True):
         k = ssl_library.EC_KEY_new_by_curve_name(NID_secp256k1)
 
         storage = ctypes.create_string_buffer(self.secret)
@@ -285,6 +300,19 @@ class PrivateKey(object):
 
         ssl_library.EC_KEY_free(k)
 
+        logger.debug('private key:{}'.format(bytes_to_hexstring(private_key, reverse=False)))
+        return PrivateKey(private_key)
+
+    @staticmethod
+    def import_wif(private_key_WIF, label='', compressed=True):
+        first_encode = b58decode(private_key_WIF)
+        private_key_full = binascii.hexlify(first_encode)
+        if compressed:
+            private_key = private_key_full[2:-10]
+        else:
+            private_key = private_key_full[2:-8]
+        private_key = binascii.unhexlify(private_key)
+        logger.debug('private key:{}'.format(bytes_to_hexstring(private_key, reverse=False)))
         return PrivateKey(private_key)
 
     def serialize(self):

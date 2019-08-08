@@ -8,7 +8,7 @@ It's designed with mobile Lightning Network clients and compatible with [lnd](ht
 
 Now you must run a full bitcoin node to serve Lightning Network, pytxhorn wants to provide a simple and light node for lightning network in the future;
 
-Pytxhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bitconlib](https://github.com/petertodd/python-bitcoinlib), [btcpy](https://github.com/chainside/btcpy), [neutrino](https://github.com/lightninglabs/neutrino);
+Pytxhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bitconlib](https://github.com/petertodd/python-bitcoinlib), [btcpy](https://github.com/chainside/btcpy), [neutrino](https://github.com/lightninglabs/neutrino), [pycoind](https://github.com/ricmoo/pycoind);
 
 ## Requirements
 
@@ -40,8 +40,16 @@ bin/pytxhorn start
 
 Available commands:
 
-* /peers - returns running bitcoin nodes
-* /broadcast - force broadcast tx to all nodes
+* GET   '/v1/node'
+* GET   '/v1/node/peers'
+* PUT   '/v1/node/shutdown'
+* PUT   '/v1/node/start'
+* GET   '/v1/wallet'
+* POST  '/v1/wallet/address'
+* POST  '/v1/wallet/spends'
+* POST  '/v1/wallet/sendtoaddress'
+* GET   '/v1/wallet/dumpprivkey/<string:address>'
+* POST  '/v1/wallet/broadcasttx/<string:tx>'
 
 ## Documentation
 
