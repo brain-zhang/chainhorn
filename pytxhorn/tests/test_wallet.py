@@ -1,7 +1,7 @@
 from .models import TestCase
 from contrib.core import HornNode
 from contrib.core.keys import PrivateKey
-from contrib.wallet import sendspendtoaddress
+from contrib.walletapp import sendspendtoaddress
 from contrib.core.util import bytes_to_hexstring
 
 

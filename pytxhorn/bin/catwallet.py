@@ -16,7 +16,7 @@ import settings
 import logging
 import pprint
 from contrib.core import HornNode
-from contrib.wallet import listspends
+from contrib.walletapp import listspends
 from docopt import docopt
 
 logger = logging.getLogger('default')

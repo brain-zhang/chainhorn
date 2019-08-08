@@ -4,13 +4,13 @@ import logging
 import sys
 
 from .node import get_spv_node
-from .wallet import (getinfo,
-                     getnewaddress,
-                     sendrawtransaction,
-                     listspends,
-                     sendtoaddress,
-                     sendspendtoaddress,
-                     dumpprivkey)
+from .walletapp import (getinfo,
+                        getnewaddress,
+                        sendrawtransaction,
+                        listspends,
+                        sendtoaddress,
+                        sendspendtoaddress,
+                        dumpprivkey)
 
 from flask import Flask
 from flask import request
