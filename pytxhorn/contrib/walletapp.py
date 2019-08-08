@@ -98,12 +98,12 @@ def sendspendtoaddress(spv, spend_hash, address, amount, memo=''):
     if not tx.verify_scripts():
         raise Exception("internal error building transaction")
 
-    spv.broadcast_transaction(tx)
-
-    return {
+    result = {
         'tx': bytes_to_hexstring(tx.serialize(), reverse=False),
-        'hash': bytes_to_hexstring(tx.hash()),
+        'hash': bytes_to_hexstring(tx.hash(), reverse=True),
     }
+    sendrawtransaction(spv, result['tx'])
+    return result
 
 
 @exception_printer
@@ -279,8 +279,8 @@ def genmultisig(spv, nreq, mtotal, *pubkeys):
 
 
 @exception_printer
-def sendrawtransaction(spv, tx_bytes):
-    tx_bytes = hexstring_to_bytes(tx_bytes, reverse=False)
+def sendrawtransaction(spv, tx_string):
+    tx_bytes = hexstring_to_bytes(tx_string, reverse=False)
     tx, _ = Transaction.unserialize(tx_bytes, spv.coin)
     spv.broadcast_transaction(tx)
     return bytes_to_hexstring(tx.hash())
