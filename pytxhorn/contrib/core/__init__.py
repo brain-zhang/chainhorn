@@ -20,8 +20,8 @@ from .monitors.stealth import StealthAddressPaymentMonitor
 from .util import Config
 
 
-VERSION = 'pytxhorn 0.2'
-VERSION_NUMBER = 0x0000010
+VERSION = 'pytxhorn 0.03'
+VERSION_NUMBER = 0x0000011
 
 logger = logging.getLogger('default')
 
