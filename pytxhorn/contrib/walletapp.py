@@ -209,6 +209,15 @@ def dumppubkey(spv, address):
 
 
 @exception_printer
+def importprivkey(spv, wif):
+    pk = PrivateKey.import_wif(wif)
+    spv.wallet.add('private_key', pk, {'label': ''})
+    address = pk.get_public_key(compressed=False).as_address(spv.coin)
+    c_address = pk.get_public_key(compressed=True).as_address(spv.coin)
+    return "{},{}".format(address, c_address)
+
+
+@exception_printer
 def dumpprivkey(spv, address_or_pubkey):
     '''PubKeyPaymentMonitor has to be included for this to work'''
     metadata = spv.wallet.get_temp('address', address_or_pubkey)
