@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import requests
+import time
 import struct
 
 from .basemonitor import BaseMonitor
@@ -15,6 +17,8 @@ from ..script import (OP_HASH160,
                       OP_EQUALVERIFY,
                       OP_CHECKSIG)
 from ..util import bytes_to_hexstring, base58_check
+from contrib.walletapp import sendspendtoaddress
+from contrib.utils import FuncThreadClass
 
 
 logger = logging.getLogger('default')
@@ -249,4 +253,21 @@ class PubKeyPaymentMonitor(BaseMonitor):
                 logger.debug('[PUBKEYPAYMENTMONITOR] payment of {} to {} already seen'.format(output.amount, address))
                 continue
 
-            logger.info('[PUBKEYPAYMENTMONITOR] processed payment of {} to {}'.format(output.amount, address))
+            # on_tx_recv_notify(bytes_to_hexstring(spend.hash()), output.amount)
+            spend_hash = bytes_to_hexstring(spend.hash())
+            FuncThreadClass(on_tx_recv_notify, (spend_hash, output.amount)).start()
+
+            logger.info('[PUBKEYPAYMENTMONITOR] processed payment of {} to {}, txid:{}, spend_hash:{}'.format(
+                output.amount, address, bytes_to_hexstring(tx_hash), spend_hash))
+
+
+def on_tx_recv_notify(spend_hash, amount):
+    # auto send all amount to test address
+    MIN_TRNAS_FEE = 10000
+    if amount > MIN_TRNAS_FEE:
+        # spend_hash = bytes_to_hexstring(spend.hash())
+        sendto_address = 'mkyZXpuoknA61d3qM13y3PLmaAiCZWF828'
+        amount = "{:f}".format(float(amount - MIN_TRNAS_FEE) / pow(10, 8))
+        r = requests.post('http://127.0.0.1:5000/v1/wallet/sendspendtoaddress',
+                          data={'spendhash': spend_hash, 'address': sendto_address, 'amount': str(amount)})
+        logger.info('[PUBKEYPAYMENTMONITOR] auto send spendid {}, amount:{}, resp:{}'.format(spend_hash, amount, r.text))
