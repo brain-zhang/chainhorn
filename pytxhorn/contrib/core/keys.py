@@ -304,7 +304,14 @@ class PrivateKey(object):
         return PrivateKey(private_key)
 
     @staticmethod
-    def import_wif(private_key_WIF, label='', compressed=True):
+    def import_wif(private_key_WIF, label=''):
+        if private_key_WIF[0] == '5':
+            compressed = False
+        elif private_key_WIF[0] == 'K' or private_key_WIF[0] == 'L':
+            compressed = True
+        else:
+            raise ValueError("Invalit WIF:{}".format(private_key_WIF))
+
         first_encode = b58decode(private_key_WIF)
         private_key_full = binascii.hexlify(first_encode)
         if compressed:
@@ -312,7 +319,7 @@ class PrivateKey(object):
         else:
             private_key = private_key_full[2:-8]
         private_key = binascii.unhexlify(private_key)
-        logger.debug('private key:{}'.format(bytes_to_hexstring(private_key, reverse=False)))
+        logger.info('private key:{}'.format(bytes_to_hexstring(private_key, reverse=False)))
         return PrivateKey(private_key)
 
     def serialize(self):

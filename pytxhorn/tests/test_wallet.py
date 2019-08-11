@@ -88,3 +88,13 @@ class WalletMainNetTestCase(TestCase):
         self.assertEqual(address, '1875pogmBxMzeYFxt3s9QED8xDGXnc71W3')
         self.assertEqual(bytes_to_hexstring(pk.secret, reverse=False),
                          '039405f36260764a8fabab122a802244580769cc88c8a2b6ff3b5af63b99a960')
+
+    def test_import_wif2(self):
+        # loading fixtures spv fake node data
+        wif = '5JhayTrDhzDHqCg2v16Y2gZWi4kWF6BFoZR3MyaaxWtyKHzKJ8d'
+        pk = PrivateKey.import_wif(wif)
+        self.spv.wallet.add('private_key', pk, {'label': ''})
+        address = pk.get_public_key(compressed=False).as_address(self.spv.coin)
+        self.assertEqual(bytes_to_hexstring(pk.secret, reverse=False),
+                         '747b8e8f5bc72bfd91471b61bea30a5d2c798805ed84034584dae2d3e920e11a')
+        self.assertEqual(address, '11121ioKu4MCB1LLzPF98AVtzFsEg7UYKm')

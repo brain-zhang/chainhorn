@@ -48,6 +48,7 @@ Available commands:
 * POST  '/v1/wallet/address'
 * POST  '/v1/wallet/spends'
 * POST  '/v1/wallet/sendtoaddress'
+* POST  '/v1/wallet/importprivkey/<string:wif>'
 * GET   '/v1/wallet/dumpprivkey/<string:address>'
 * POST  '/v1/wallet/broadcasttx/<string:tx>'
 
