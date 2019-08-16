@@ -56,7 +56,7 @@ class Manager(threading.Thread):
     INVENTORY_FLAG_HOLD_FOREVER = 0x01
     INVENTORY_FLAG_MUST_CONFIRM = 0x02
 
-    def __init__(self, spv=None, peer_goal=1, broadcast_peer_goal=10, listen=('', 0), tor=False, user_agent='pytxhorn'):
+    def __init__(self, spv=None, peer_goal=1, broadcast_peer_goal=10, listen=('', 0), tor=False, user_agent='chainhorn'):
         threading.Thread.__init__(self)
         self.spv = spv
         self.peer_goal = peer_goal

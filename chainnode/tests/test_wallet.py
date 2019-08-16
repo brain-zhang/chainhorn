@@ -11,7 +11,7 @@ class WalletTestnetTestCase(TestCase):
         # loading fixtures spv fake node data
         super(WalletTestnetTestCase, self).setUp()
 
-        self.spv = HornNode(app_name='pytxhorn',
+        self.spv = HornNode(app_name='chainhorn',
                             testnet=True,
                             peer_goal=10,
                             broadcast_peer_goal=10,
@@ -70,7 +70,7 @@ class WalletMainNetTestCase(TestCase):
         # loading fixtures spv fake node data
         super(WalletMainNetTestCase, self).setUp()
 
-        self.spv = HornNode(app_name='pytxhorn',
+        self.spv = HornNode(app_name='chainhorn',
                             testnet=False,
                             peer_goal=10,
                             broadcast_peer_goal=10,
