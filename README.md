@@ -1,14 +1,14 @@
-# <img src="resource/logo.png" width=80 /> pytxhorn
+# <img src="resource/logo.png" width=80 /> chainhorn
 
-__WARNING__: *pytxhorn is still developing, so please be patient if things change or features iterate and change quickly. Once pytxhorn hits 1.0, it will slow down considerably!*
+__WARNING__: *chainhorn is still developing, so please be patient if things change or features iterate and change quickly. Once chainhorn hits 1.0, it will slow down considerably!*
 
-pytxhorn is a standalone, easy-to-use Python module implementing the full Bitcoin SPV client protocol.
+chainhorn is a standalone, easy-to-use Python module implementing the full Bitcoin SPV client protocol.
 
 It's designed with mobile Lightning Network clients and compatible with [lnd](https://github.com/lightningnetwork/lnd);
 
-Now you must run a full bitcoin node to serve Lightning Network, pytxhorn wants to provide a simple and light node for lightning network in the future;
+Now you must run a full bitcoin node to serve Lightning Network, chainhorn wants to provide a simple and light node for lightning network in the future;
 
-Pytxhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bitconlib](https://github.com/petertodd/python-bitcoinlib), [btcpy](https://github.com/chainside/btcpy), [neutrino](https://github.com/lightninglabs/neutrino), [pycoind](https://github.com/ricmoo/pycoind);
+Chainhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bitconlib](https://github.com/petertodd/python-bitcoinlib), [btcpy](https://github.com/chainside/btcpy), [neutrino](https://github.com/lightninglabs/neutrino), [pycoind](https://github.com/ricmoo/pycoind);
 
 ## Requirements
 
@@ -20,7 +20,7 @@ apt install supervisor
 ## Run
 
 ```
-bin/pytxhorn start
+bin/chainhorn start
 ```
 
 
@@ -48,6 +48,7 @@ Available commands:
 * POST  '/v1/wallet/address'
 * POST  '/v1/wallet/spends'
 * POST  '/v1/wallet/sendtoaddress'
+* POST  '/v1/wallet/importprivkey/<string:wif>'
 * GET   '/v1/wallet/dumpprivkey/<string:address>'
 * POST  '/v1/wallet/broadcasttx/<string:tx>'
 

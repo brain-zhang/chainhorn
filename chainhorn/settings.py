@@ -18,8 +18,8 @@ IPC_ENDPOINT_ROOT = os.path.join(RUN_ROOT, 'ipc')
 sys.path.append(PROJECT_ROOT)
 LOGGING_LEVEL = 'INFO'
 
-# pytxhorn node config
-APPNAME = 'pytxhorn'
+# chainhorn node config
+APPNAME = 'chainhorn'
 
 BITCOIN_NETWORK_PEER_GOAL = 100
 

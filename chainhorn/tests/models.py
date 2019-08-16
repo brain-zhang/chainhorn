@@ -15,12 +15,12 @@ class TestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         self.logger = logging.getLogger('default')
         self.fixture_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'fixtures'))
-        self.temp_fixture_path = tempfile.mkdtemp(suffix='pytxhorn')
+        self.temp_fixture_path = tempfile.mkdtemp(suffix='chainhorn')
         shutil.copytree(os.path.join(self.fixture_path, 'bitcoin'), os.path.join(self.temp_fixture_path, 'bitcoin'))
         super(TestCase, self).__init__(*args, **kwargs)
 
     def setUp(self):
-        self.logger.info('hello, pytxhorn')
+        self.logger.info('hello, chainhorn')
         super(TestCase, self).setUp()
 
     def tearDown(self):

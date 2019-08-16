@@ -10,6 +10,7 @@ from .walletapp import (getinfo,
                         listspends,
                         sendtoaddress,
                         sendspendtoaddress,
+                        importprivkey,
                         dumpprivkey)
 
 from flask import Flask
@@ -116,6 +117,12 @@ class WalletSendSpendtoAddress(Resource):
         return sendspendtoaddress(spv, spendhash, address, amount), 200
 
 
+class WalletImportPrivkey(Resource):
+    def post(self, wif):
+        import_address = importprivkey(spv, wif)
+        return import_address, 200
+
+
 class WalletDumpPrivkey(Resource):
     def get(self, address):
         key = dumpprivkey(spv, address)
@@ -131,6 +138,7 @@ api.add_resource(WalletGenNewAddress, url_version_wrapper('/wallet/address'))
 api.add_resource(WalletGetSpends, url_version_wrapper('/wallet/spends'))
 api.add_resource(WalletSendtoAddress, url_version_wrapper('/wallet/sendtoaddress'))
 api.add_resource(WalletSendSpendtoAddress, url_version_wrapper('/wallet/sendspendtoaddress'))
+api.add_resource(WalletImportPrivkey, url_version_wrapper('/wallet/importprivkey/<string:wif>'))
 api.add_resource(WalletDumpPrivkey, url_version_wrapper('/wallet/dumpprivkey/<string:address>'))
 api.add_resource(WalletBroadcastTx, url_version_wrapper('/wallet/broadcasttx/<string:tx>'))
 

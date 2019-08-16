@@ -10,7 +10,7 @@ class BlockChainTestCase(TestCase):
         # loading fixtures spv fake node data
         super(BlockChainTestCase, self).setUp()
 
-        spv = HornNode(app_name='pytxhorn',
+        spv = HornNode(app_name='chainhorn',
                        testnet=False,
                        peer_goal=10,
                        broadcast_peer_goal=10,

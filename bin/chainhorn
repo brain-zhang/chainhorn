@@ -6,17 +6,17 @@ prefix=/usr
 exec_prefix=/usr
 sbindir=/usr/sbin
 SCRIPT_BASE=/root/scripts
-SCRIPT_LOG_LOCATION=/opt/pytxhorn/var/log/pytxhorn
+SCRIPT_LOG_LOCATION=/opt/chainhorn/var/log/chainhorn
 START_UP_LOG=${SCRIPT_LOG_LOCATION}/startup
 SHUT_DOWN_LOG=${SCRIPT_LOG_LOCATION}/shutdown
 
 prog="supervisord"
-pidfile=${PIDFILE-/opt/pytxhorn/var/run/pytxhorn.pid}
-lockfile=${LOCKFILE-/opt/pytxhorn/var/run/pytxhorn.lock}
+pidfile=${PIDFILE-/opt/chainhorn/var/run/chainhorn.pid}
+lockfile=${LOCKFILE-/opt/chainhorn/var/run/chainhorn.lock}
 supervisord=`which supervisord`
 supervisorctl=`which supervisorctl`
 RETVAL=0
-CONF_PATH="/opt/pytxhorn/etc/runtime/supervisor/supervisord.conf"
+CONF_PATH="/opt/chainhorn/etc/runtime/supervisor/supervisord.conf"
 OPTIONS="--pidfile ${pidfile} -c $CONF_PATH"
 
 start() {

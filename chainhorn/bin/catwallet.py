@@ -24,7 +24,7 @@ logger = logging.getLogger('default')
 if __name__ == '__main__':
     arguments = docopt(__doc__, version='catwallet 1.0')
     datapath = arguments['<datapath>']
-    spv = HornNode(app_name='pytxhorn_catwallet',
+    spv = HornNode(app_name='chainhorn_catwallet',
                    testnet=True,
                    peer_goal=10,
                    broadcast_peer_goal=10,

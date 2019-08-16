@@ -20,8 +20,8 @@ from .monitors.stealth import StealthAddressPaymentMonitor
 from .util import Config
 
 
-VERSION = 'pytxhorn 0.03'
-VERSION_NUMBER = 0x0000011
+VERSION = 'chainhorn 0.04'
+VERSION_NUMBER = 0x0000100
 
 logger = logging.getLogger('default')
 
@@ -44,8 +44,8 @@ class HornNode(object):
     :type tor: boolean
     :param sync_block_start: specify the block number to start syncing at
     :type sync_block_start: integer or None
-    :param app_datapath: specify the data store dir path, default: ~/.pytxporn
-    :type app_datapath: string datapath, exp: '/var/pytxhorn/data'
+    :param app_datapath: specify the data store dir path, default: ~/.chainhorn
+    :type app_datapath: string datapath, exp: '/var/chainhorn/data'
     '''
 
     def __init__(self, app_name,
