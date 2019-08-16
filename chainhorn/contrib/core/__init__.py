@@ -20,8 +20,8 @@ from .monitors.stealth import StealthAddressPaymentMonitor
 from .util import Config
 
 
-VERSION = 'chainhorn 0.03'
-VERSION_NUMBER = 0x0000011
+VERSION = 'chainhorn 0.04'
+VERSION_NUMBER = 0x0000100
 
 logger = logging.getLogger('default')
 
