@@ -44,7 +44,7 @@ class HornNode(object):
     :type tor: boolean
     :param sync_block_start: specify the block number to start syncing at
     :type sync_block_start: integer or None
-    :param app_datapath: specify the data store dir path, default: ~/.pytxporn
+    :param app_datapath: specify the data store dir path, default: ~/.chainhorn
     :type app_datapath: string datapath, exp: '/var/chainhorn/data'
     '''
 
