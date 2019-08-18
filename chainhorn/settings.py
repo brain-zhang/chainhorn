@@ -36,6 +36,24 @@ HOST_PORT = 8033
 WEB_HOST_IP = '0.0.0.0'
 WEB_HOST_PORT = 5000
 
+AUTHORIZATIONS = {
+    'apikey': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'APIKEY'
+    },
+    'appId': {
+        'type': 'apiKey',
+        'in': 'header',
+        'name': 'APPID',
+    }
+}
+
+DEFAULT_TOKENS = {
+    "APIKEY": "hello",
+    "APPID": "chainhorn"
+}
+
 
 # add your settings before these code if you want to make it in local_settings.py
 try:

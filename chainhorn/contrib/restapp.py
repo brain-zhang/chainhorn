@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import json
 import logging
 import sys
+
+from flask_httpauth import HTTPTokenAuth
+from flask import Flask
+from flask import request
+from flask_restplus import Api, Resource, fields
 
 from .node import get_spv_node
 from .walletapp import (getinfo,
@@ -12,26 +18,39 @@ from .walletapp import (getinfo,
                         sendspendtoaddress,
                         importprivkey,
                         dumpprivkey)
-
-from flask import Flask
-from flask import request
-from flask_restplus import Api, Resource, fields
+from settings import AUTHORIZATIONS, DEFAULT_TOKENS
 
 
 logger = logging.getLogger('default')
-
-API_VERSION = 'v1'
 app = Flask(__name__)
 spv = get_spv_node()
-api = Api(app, version=API_VERSION, title='Chainhorn API',
+
+API_VERSION = 'v1'
+
+api = Api(app,
+          version=API_VERSION,
+          authorizations=AUTHORIZATIONS,
+          security=list(AUTHORIZATIONS.keys()),
+          title='Chainhorn API',
           description='Chainhorn API',
 )
-
 
 ns_node = api.namespace('node', path="/{}{}".format(API_VERSION, '/node'),
                         description='chainhorn node operations')
 ns_wallet = api.namespace('wallet', path="/{}{}".format(API_VERSION, '/wallet'),
                           description='chainhorn wallet operations')
+
+auth = HTTPTokenAuth()
+tokens = DEFAULT_TOKENS
+
+
+@auth.verify_token
+def verify_token(token):
+    if request.headers.get('APIKEY', '').strip()==tokens['APIKEY'] and \
+       request.headers.get('APPID', '').strip() == tokens['APPID']:
+        return True
+    else:
+        return False
 
 
 def shutdown_server():
@@ -49,6 +68,7 @@ def shutdown_handler(signal, frame):
 @ns_node.route('')
 class NodeGetInfo(Resource):
     @ns_node.doc('get node info')
+    @auth.login_required
     def get(self):
         '''get node info'''
         info = spv.getinfo()
@@ -58,6 +78,7 @@ class NodeGetInfo(Resource):
 @ns_node.route('/peers')
 class NodeGetAllPeers(Resource):
     @ns_node.doc('get peers list')
+    @auth.login_required
     def get(self):
         '''get peers list'''
         network_manager = spv.get_network_manager()
@@ -68,6 +89,7 @@ class NodeGetAllPeers(Resource):
 @ns_node.route('/shutdown')
 class NodeShutDown(Resource):
     @ns_node.doc('shutdown node')
+    @auth.login_required
     def put(self):
         '''shutdown node'''
         spv.shutdown()
@@ -77,6 +99,7 @@ class NodeShutDown(Resource):
 @ns_node.route('/start')
 class NodeStart(Resource):
     @ns_node.doc('start node')
+    @auth.login_required
     def put(self):
         '''start node'''
         spv.start()
@@ -86,6 +109,7 @@ class NodeStart(Resource):
 @ns_wallet.route('')
 class WalletGetInfo(Resource):
     @ns_wallet.doc('get wallet info')
+    @auth.login_required
     def get(self):
         '''get wallet info'''
         info = getinfo(spv)
@@ -96,6 +120,7 @@ class WalletGetInfo(Resource):
 class WalletBroadcastTx(Resource):
     @ns_wallet.doc('broadcast raw tx')
     @ns_wallet.param('tx', 'The transaction hash identifier')
+    @auth.login_required
     def post(self, tx):
         '''broadcast raw tx'''
         sendrawtransaction(spv, tx)
@@ -105,6 +130,7 @@ class WalletBroadcastTx(Resource):
 @ns_wallet.route('/address')
 class WalletGenNewAddress(Resource):
     @ns_wallet.doc('generate new address')
+    @auth.login_required
     def post(self):
         '''generate new address'''
         new_address = getnewaddress(spv)
@@ -114,6 +140,7 @@ class WalletGenNewAddress(Resource):
 @ns_wallet.route('/spends')
 class WalletGetSpends(Resource):
     @ns_wallet.doc('list unspends')
+    @auth.login_required
     def get(self):
         '''list unspends'''
         spents = listspends(spv)
@@ -130,6 +157,7 @@ sendto_address_model = api.model('SendToAddressParams', {
 class WalletSendtoAddress(Resource):
     @ns_wallet.doc('send amount to specified address')
     @ns_wallet.expect(sendto_address_model, code=200)
+    @auth.login_required
     def post(self):
         '''send amount to specified address, exp:send 0.01btc to 1xxxx'''
         address = api.payload['address']
@@ -148,6 +176,7 @@ sendto_spend_address_model = api.model('SendToSpendAddressParams', {
 class WalletSendSpendtoAddress(Resource):
     @ns_wallet.doc('send amount to specified address from spendhash')
     @ns_wallet.expect(sendto_spend_address_model, code=200)
+    @auth.login_required
     def post(self):
         '''send amount to specified address from spendhash'''
         spendhash = api.payload['spendhash']
@@ -160,6 +189,7 @@ class WalletSendSpendtoAddress(Resource):
 class WalletImportPrivkey(Resource):
     @ns_wallet.doc('import wif private key')
     @ns_wallet.param('wif', 'The wif key')
+    @auth.login_required
     def post(self, wif):
         '''import wif private key'''
         import_address = importprivkey(spv, wif)
@@ -170,6 +200,7 @@ class WalletImportPrivkey(Resource):
 class WalletDumpPrivkey(Resource):
     @ns_wallet.doc('dump wif private key by address')
     @ns_wallet.param('address', 'address')
+    @auth.login_required
     def get(self, address):
         '''dump wif private key by address'''
         key = dumpprivkey(spv, address)
