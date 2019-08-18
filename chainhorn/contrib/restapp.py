@@ -116,7 +116,7 @@ class WalletGetInfo(Resource):
         return {'walletinfo': info}, 200
 
 
-@ns_wallet.route('/broadcast/string:tx')
+@ns_wallet.route('/broadcast/<string:tx>')
 class WalletBroadcastTx(Resource):
     @ns_wallet.doc('broadcast raw tx')
     @ns_wallet.param('tx', 'The transaction hash identifier')
