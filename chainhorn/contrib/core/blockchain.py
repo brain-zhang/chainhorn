@@ -52,7 +52,6 @@ class Blockchain(object):
 
         with self.blockchain_lock:
             with closing(shelve.open(self.blockchain_db_file)) as db:
-                logger.info("db protocol:{}".format(db._protocol))
                 if 'needs_headers' not in db or self.spv.args.resync:
                     db['needs_headers'] = True
 

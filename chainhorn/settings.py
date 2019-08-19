@@ -54,6 +54,8 @@ DEFAULT_TOKENS = {
     "APPID": "chainhorn"
 }
 
+# For testcase
+SKIP_NDBM_TEST = True
 
 # add your settings before these code if you want to make it in local_settings.py
 try:

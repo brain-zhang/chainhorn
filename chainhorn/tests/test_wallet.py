@@ -1,8 +1,10 @@
+import unittest
 from .models import TestCase
 from contrib.core import HornNode
 from contrib.core.keys import PrivateKey
 from contrib.walletapp import sendspendtoaddress
 from contrib.core.util import bytes_to_hexstring
+from settings import SKIP_NDBM_TEST
 
 
 class WalletTestnetTestCase(TestCase):
@@ -36,6 +38,7 @@ class WalletTestnetTestCase(TestCase):
         self.logger.info(private_key_metadata)
         self.logger.info(pk.as_wif(self.spv.coin, True))
 
+    @unittest.skipIf(SKIP_NDBM_TEST, "skip dbm test")
     def test_get_temp_collections(self):
         addresses = [
             'mgSFbgRuX9j1DpDUs2drfvoLd8mUC3G84V',
@@ -53,6 +56,7 @@ class WalletTestnetTestCase(TestCase):
         for address in addresses:
             self.assertIn(address, wallet_address)
 
+    @unittest.skipIf(SKIP_NDBM_TEST, "skip dbm test")
     def test_spend_sent(self):
         spendhash = '33e075e7b5099d57550a74e3300aa7586f59d96007e4b847a178beaf8ec40da4'
         address = '2NGZrVvZG92qGYqzTLjCAewvPZ7JE8S8VxE'

@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import unittest
 from .models import TestCase
 from contrib.core import HornNode
+from settings import SKIP_NDBM_TEST
 
 
 class BlockChainTestCase(TestCase):
@@ -20,6 +22,7 @@ class BlockChainTestCase(TestCase):
                 )
         self.blockchain = spv.blockchain
 
+    @unittest.skipIf(SKIP_NDBM_TEST, "skip dbm test")
     def test_load_blockchain_db(self):
         # loading fixtures spv fake node data
 
