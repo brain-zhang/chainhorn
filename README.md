@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/brain-zhang/chainhorn.svg?branch=master)](https://travis-ci.org/brain-zhang/chainhorn)
-
 # <img src="resource/logo.png" width=80 /> chainhorn
+
+[![Build Status](https://travis-ci.org/brain-zhang/chainhorn.svg?branch=master)](https://travis-ci.org/brain-zhang/chainhorn)
 
 __WARNING__: *chainhorn is still developing, so please be patient if things change or features iterate and change quickly. Once chainhorn hits 1.0, it will slow down considerably!*
 

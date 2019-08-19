@@ -6,11 +6,12 @@ notifications:
 sudo: true
 
 python:
-      - 3.6.8
+      - 3.6
 
 before_install:
-      - sudo apt install -y supervisor
-      - sudo apt install -y libgdbm-dev
+      - apt install -y python-meld3
+      - apt install -y supervisor
+      - apt install -y libgdbm-dev
       - pip install -r requirements.txt
 
 script:
