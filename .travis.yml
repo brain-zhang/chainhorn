@@ -9,8 +9,6 @@ python:
       - 3.6
 
 before_install:
-      - sudo apt install -y python-meld3
-      - sudo apt install -y supervisor
       - sudo apt install -y libgdbm-dev
 
 install:
