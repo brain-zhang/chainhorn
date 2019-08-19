@@ -10,7 +10,7 @@ python:
 
 before_install:
     - sudo apt install -y libdb5.3:amd64
-    - ldd /usr/lib/python3.6/lib-dynload/_dbm.cpython-36m-x86_64-linux-gnu.so
+    - ls /usr/lib/python3.6/lib-dynload/*|grep dbm
 
 install:
       - pip install -r requirements.txt
