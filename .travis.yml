@@ -9,7 +9,7 @@ python:
       - 3.6
 
 before_install:
-      - sudo apt install -y libgdbm-dev
+      - sudo apt install -y python3-gdbm-dbg
 
 install:
       - pip install -r requirements.txt
