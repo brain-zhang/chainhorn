@@ -11,7 +11,7 @@ class DbfilenameShelfX(Shelf):
     """
 
     def __init__(self, filename, flag='c', protocol=None, writeback=False):
-        Shelf.__init__(self, dbm.ndbm.open(filename, flag), protocol, writeback)
+        Shelf.__init__(self, dbm.gdbm.open(filename, flag), protocol, writeback)
 
 
 def open(filename, flag='c', protocol=None, writeback=False):
