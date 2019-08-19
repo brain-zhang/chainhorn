@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/brain-zhang/chainhorn.svg?branch=master)](https://travis-ci.org/brain-zhang/chainhorn)
+
 # <img src="resource/logo.png" width=80 /> chainhorn
 
 __WARNING__: *chainhorn is still developing, so please be patient if things change or features iterate and change quickly. Once chainhorn hits 1.0, it will slow down considerably!*
@@ -10,11 +12,12 @@ Now you must run a full bitcoin node to serve Lightning Network, chainhorn wants
 
 Chainhorn is inspired with [pyspv](https://github.com/sarchar/pyspv), [python-bitconlib](https://github.com/petertodd/python-bitcoinlib), [btcpy](https://github.com/chainside/btcpy), [neutrino](https://github.com/lightninglabs/neutrino), [pycoind](https://github.com/ricmoo/pycoind);
 
-## Requirements
+## Requirements(ubuntu16.04)
 
 ```
 pip install -r requirements.txt
-apt install supervisor
+sudo apt install -y supervisor
+sudo apt install -y libgdbm-dev
 ```
 
 ## Run

@@ -9,6 +9,8 @@ python:
       - 3.6.8
 
 before_install:
+      - sudo apt install -y supervisor
+      - sudo apt install -y libgdbm-dev
       - pip install -r requirements.txt
 
 script:
