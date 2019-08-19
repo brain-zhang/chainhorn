@@ -9,7 +9,7 @@ python:
       - 3.6
 
 before_install:
-    - sudo apt install -y libgdbm3:amd64
+    - sudo apt install -y libdb5.3:amd64
 
 install:
       - pip install -r requirements.txt
