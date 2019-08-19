@@ -25,4 +25,4 @@ def open(filename, flag='c', protocol=None, writeback=False):
     See the module's __doc__ string for an overview of the interface.
     """
 
-    return Shelf(filename, flag, protocol, writeback)
+    return DbfilenameShelfX(filename, flag, protocol, writeback)
